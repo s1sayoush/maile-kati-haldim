@@ -141,12 +141,12 @@ const DashboardHome = () => {
       {!profileComplelted && !loading && (
         <NotificationBanner
           variant="secondary"
-          message="Welcome to our new platform! Complete your profile"
+          message="Welcome! Complete your profile"
           link="/dashboard/profile"
         />
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      {/* <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {childrenProgress.map((child) => (
           <ChildProgressCard key={child.id} child={child} />
         ))}
@@ -214,7 +214,7 @@ const DashboardHome = () => {
             </div>
           </div>
         </CardContent>
-      </Card>
+      </Card> */}
     </div>
   );
 };

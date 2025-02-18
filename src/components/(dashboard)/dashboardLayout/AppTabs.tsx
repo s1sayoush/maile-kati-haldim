@@ -63,21 +63,11 @@ export function AppTabs() {
 
   return (
     isMobile && (
-      <div
-        className="fixed bottom-0  left-0 right-0   border-0"
-        // style={
-        //   Capacitor.getPlatform() === "android"
-        //     ? {
-        //         paddingBottom: `calc(env(safe-area-inset-bottom)+ 4rem)`,
-        //         // paddingBottom: "12px",
-        //       }
-        //     : undefined
-        // }
-      >
+      <div className="fixed bottom-0  left-0 right-0   border-0">
         <Tabs value={activeItem} className="w-full ">
           <TabsList
-            className={`grid w-full grid-cols-5 border-t ${
-              Capacitor.getPlatform() === "android" ? "h-28 pb-10" : "h-24 pb-8"
+            className={`grid w-full grid-cols-4 border-t ${
+              Capacitor.getPlatform() === "android" ? "h-28 pb-10" : "h-24 pb-4"
             }`}
           >
             {items.map((item) => (
