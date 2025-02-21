@@ -21,6 +21,6 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "src/components/(dashboard)/dashboardContent/DashboardHome.jsx", "src/components/(dashboard)/dashboardContent/completeyourprofile.jsx", "src/types/types.ts."],
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "src/components/(dashboard)/dashboardContent/DashboardHome.jsx", "src/components/(dashboard)/dashboardContent/completeyourprofile.jsx", "src/types/types.ts.", "src/components/steps/expenses/ExpenseForm.tsx", "src/components/steps/expenses/PaymentMethodModal.jsx", "src/components/steps/expenses/LiablePersonModal.jsx"],
   "exclude": ["node_modules"]
 }

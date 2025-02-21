@@ -17,16 +17,16 @@ import ReviewStep from "@/components/steps/ReviewStep";
 import ExpensesStep from "@/components/steps/ExpensesStep";
 
 const STEPS = [
-  {
-    id: "details",
-    title: "Event Details",
-    component: EventDetailsStep,
-  },
-  {
-    id: "participants",
-    title: "Participants",
-    component: ParticipantsStep,
-  },
+  // {
+  //   id: "details",
+  //   title: "Event Details",
+  //   component: EventDetailsStep,
+  // },
+  // {
+  //   id: "participants",
+  //   title: "Participants",
+  //   component: ParticipantsStep,
+  // },
   {
     id: "expenses",
     title: "Expenses",
@@ -43,6 +43,8 @@ export default function ExpenseSplitterPage() {
   const { currentStep, nextStep, previousStep } = useEventStore();
   const currentState = useEventStore.getState();
   const CurrentStepComponent = STEPS[currentStep].component;
+
+  console.log("currentState", JSON.stringify(currentState, null, 2));
 
   return (
     <main className="container mx-auto p-4 md:p-8">

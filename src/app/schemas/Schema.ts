@@ -28,12 +28,17 @@ export const paymentDetailSchema = z.object({
 
 // Bill Item Schema
 export const billItemSchema = z.object({
-  id: z.string().optional(), // Optional because it's generated
-  description: z.string().min(1, "Description is required"),
+  id: z.string().optional(),
+  description: z.string().optional(),
   amount: z.number().min(0, "Amount must be positive"),
   category: z.nativeEnum(BillCategory),
   paymentMethod: z.nativeEnum(PaymentMethod),
-  payments: z.array(paymentDetailSchema),
+  payments: z.array(
+    z.object({
+      personId: z.string(),
+      amount: z.number().min(0),
+    })
+  ),
   liablePersons: z
     .array(z.string())
     .min(1, "At least one person must be liable"),

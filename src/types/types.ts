@@ -12,9 +12,9 @@ export interface Person {
 }
 
 export enum PaymentMethod {
-  SINGLE = "SINGLE", // One person paid the full amount
-  COMBINATION = "COMBINATION", // Multiple people including possible common funds
-  COMMON = "COMMON", // Fully paid from common funds (like group winnings)
+  SINGLE = "Single", // One person paid the full amount
+  COMBINATION = "Combination", // Multiple people including possible common funds
+  COMMON = "Common", // Fully paid from common funds (like group winnings)
 }
 
 export interface PaymentDetail {
@@ -23,17 +23,17 @@ export interface PaymentDetail {
 }
 
 export enum BillCategory {
-  Food = "FOOD",
-  Drinks = "DRINKS",
-  Transport = "TRANSPORT",
-  Accommodation = "ACCOMMODATION",
-  Entertainment = "ENTERTAINMENT",
-  Miscellaneous = "MISCELLANEOUS",
+  FOOD = "Food",
+  DRINKS = "Drinks",
+  TRANSPORT = "Transport",
+  ACCOMODATION = "Accomodation",
+  ENTERTAINMENT = "Entertainment",
+  MISCALLENOUS = "Miscallenous",
 }
 
 export interface BillItem {
   id: string;
-  description: string;
+  itemName?: string;
   amount: number;
   category: BillCategory;
   paymentMethod: PaymentMethod;
@@ -70,39 +70,39 @@ export interface DetailedReport {
 }
 
 // Example usage:
-const exampleBillItems: BillItem[] = [
-  {
-    // Regular expense paid by one person
-    id: "1",
-    description: "Dinner",
-    amount: 100,
-    category: BillCategory.Food,
-    paymentMethod: PaymentMethod.SINGLE,
-    payments: [{ personId: "person1", amount: 100 }],
-    liablePersons: ["person1", "person2", "person3"],
-  },
-  {
-    // Common fund (like prize money)
-    id: "2",
-    description: "Tournament prize",
-    amount: 300,
-    category: BillCategory.Miscellaneous,
-    paymentMethod: PaymentMethod.COMMON,
-    payments: [{ personId: "common", amount: 300 }],
-    liablePersons: [], // Empty because it benefits everyone
-  },
-  {
-    // Combination of personal and common fund
-    id: "3",
-    description: "Hotel stay",
-    amount: 1000,
-    category: BillCategory.Accommodation,
-    paymentMethod: PaymentMethod.COMBINATION,
-    payments: [
-      { personId: "common", amount: 400 }, // Part from common fund
-      { personId: "person1", amount: 300 }, // Rest split between people
-      { personId: "person2", amount: 300 },
-    ],
-    liablePersons: ["person1", "person2", "person3"],
-  },
-];
+// const exampleBillItems: BillItem[] = [
+//   {
+//     // Regular expense paid by one person
+//     id: "1",
+//     description: "Dinner",
+//     amount: 100,
+//     category: BillCategory.Food,
+//     paymentMethod: PaymentMethod.SINGLE,
+//     payments: [{ personId: "person1", amount: 100 }],
+//     liablePersons: ["person1", "person2", "person3"],
+//   },
+//   {
+//     // Common fund (like prize money)
+//     id: "2",
+//     description: "Tournament prize",
+//     amount: 300,
+//     category: BillCategory.Miscellaneous,
+//     paymentMethod: PaymentMethod.COMMON,
+//     payments: [{ personId: "common", amount: 300 }],
+//     liablePersons: [], // Empty because it benefits everyone
+//   },
+//   {
+//     // Combination of personal and common fund
+//     id: "3",
+//     description: "Hotel stay",
+//     amount: 1000,
+//     category: BillCategory.Accommodation,
+//     paymentMethod: PaymentMethod.COMBINATION,
+//     payments: [
+//       { personId: "common", amount: 400 }, // Part from common fund
+//       { personId: "person1", amount: 300 }, // Rest split between people
+//       { personId: "person2", amount: 300 },
+//     ],
+//     liablePersons: ["person1", "person2", "person3"],
+//   },
+// ];
