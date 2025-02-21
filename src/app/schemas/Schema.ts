@@ -16,6 +16,8 @@ export const eventDetailsSchema = z.object({
 export const participantSchema = z.object({
   id: z.string(),
   name: z.string().min(1, "Name is required"),
+  email: z.string().email().optional(),
+  phone: z.string().optional(),
 });
 
 // Payment Detail Schema

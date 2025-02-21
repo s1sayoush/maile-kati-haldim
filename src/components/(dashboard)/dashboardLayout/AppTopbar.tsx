@@ -66,7 +66,7 @@ const AppTopbar = () => {
           <div className="flex  items-center gap-2 sm:gap-4">
             <SidebarTrigger className="lg:hidden -ml-1" />
             <h1 className="text-lg sm:text-xl  font-semibold truncate">
-              Players Portal
+              Maile Kati Haldim
             </h1>
           </div>
 

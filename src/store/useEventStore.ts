@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { nanoid } from "nanoid";
-import { Event, BillItem, EventDetails } from "@/types/types";
+import { Event, BillItem, EventDetails, Person } from "@/types/types";
 
 interface EventStore {
   // Event state
@@ -11,9 +11,9 @@ interface EventStore {
   setEventDetails: (details: EventDetails) => void;
 
   // Participant Management
-  addParticipant: (name: string) => void;
+  addParticipant: (person: Person) => void;
   removeParticipant: (id: string) => void;
-  updateParticipant: (id: string, name: string) => void;
+  updateParticipant: (id: string, person: Person) => void;
 
   // Bill Items
   addBillItem: (item: Omit<BillItem, "id">) => void;
@@ -59,13 +59,18 @@ export const useEventStore = create<EventStore>((set, get) => ({
       },
     })),
 
-  addParticipant: (name) =>
+  addParticipant: (person) =>
     set((state) => ({
       currentEvent: {
         ...state.currentEvent!,
         participants: [
           ...state.currentEvent!.participants,
-          { id: nanoid(), name },
+          {
+            id: nanoid(),
+            name: person.name as string,
+            phone: person.phone,
+            email: person.email,
+          },
         ],
       },
     })),
@@ -85,12 +90,12 @@ export const useEventStore = create<EventStore>((set, get) => ({
       },
     })),
 
-  updateParticipant: (id, name) =>
+  updateParticipant: (id, person) =>
     set((state) => ({
       currentEvent: {
         ...state.currentEvent!,
         participants: state.currentEvent!.participants.map((p) =>
-          p.id === id ? { ...p, name } : p
+          p.id === id ? { ...p, ...person } : p
         ),
       },
     })),
