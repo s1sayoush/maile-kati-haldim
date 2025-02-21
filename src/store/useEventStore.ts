@@ -41,8 +41,7 @@ const initialEvent: Event = {
   details: {
     eventTitle: "",
     location: "",
-    address: "",
-    coordinates: [0, 0],
+    coordinates: [27.7172, 85.324],
   },
   participants: [],
   items: [],

@@ -55,7 +55,7 @@ const AppTopbar = () => {
           Capacitor.isNativePlatform()
             ? "fixed top-0   left-0 right-0 z-50"
             : "sticky top-0 z-50"
-        } bg-background border-b`}
+        } bg-background border-b z-50`}
       >
         {Capacitor.isNativePlatform() && (
           <div className="w-full pt-[calc(env(safe-area-inset-top))] bg-background" /> // <div />

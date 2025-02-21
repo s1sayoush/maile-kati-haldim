@@ -1,10 +1,7 @@
-import { LatLngExpression } from "leaflet";
-
 export interface EventDetails {
-  eventTitle: string;
-  location: string;
-  address: string;
-  coordinates: LatLngExpression;
+  eventTitle?: string;
+  location?: string;
+  coordinates?: [number, number];
 }
 
 export interface Person {
