@@ -52,3 +52,41 @@ export const eventSchema = z.object({
     .min(1, "At least one participant is required"),
   items: z.array(billItemSchema),
 });
+
+export const expenseSchema = z
+  .object({
+    itemName: z.string().min(1, "Item name is required"),
+    amount: z.string().refine((val) => !isNaN(Number(val)) && Number(val) > 0, {
+      message: "Amount must be greater than 0",
+    }),
+    category: z.nativeEnum(BillCategory),
+    paymentMethod: z.nativeEnum(PaymentMethod),
+    payments: z.array(
+      z.object({
+        personId: z.string(),
+        amount: z.number().min(0),
+      })
+    ),
+    liablePersons: z
+      .array(z.string())
+      .min(1, "At least one person must be selected"),
+    selectedPayer: z.string().min(1, "Payer must be selected"),
+  })
+  .refine(
+    (data) => {
+      if (data.paymentMethod === PaymentMethod.SINGLE) {
+        return data.selectedPayer.length > 0;
+      }
+      if (data.paymentMethod === PaymentMethod.COMBINATION) {
+        const totalPaid = data.payments.reduce((sum, p) => sum + p.amount, 0);
+        return Math.abs(totalPaid - Number(data.amount)) < 0.01;
+      }
+      return true;
+    },
+    {
+      message:
+        "For combination payments, the sum must equal the total amount. For single payment, a payer must be selected.",
+    }
+  );
+
+type ExpenseFormData = z.infer<typeof expenseSchema>;

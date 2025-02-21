@@ -278,7 +278,7 @@ export default function Profile() {
         </Card>
 
         <PersonalInfoForm
-          formData={formData}
+          formData={formData as any}
           isEditing={isEditing}
           isLoading={isLoading}
           onInputChange={handleInputChange}

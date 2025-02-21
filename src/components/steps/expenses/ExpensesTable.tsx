@@ -31,21 +31,19 @@ const ExpensesTable = ({ items, onEdit, onDelete }: ExpensesTableProps) => {
   const formatPayments = (payments: { personId: string; amount: number }[]) => {
     const validPayments = payments.filter((p) => p.amount > 0);
 
-    // If the list is short, show it directly
     if (validPayments.length <= 2) {
       return (
         <div className="flex flex-wrap gap-1">
           {validPayments.map((p, i) => (
             <Badge key={i} variant="secondary">
               {personIdtoName(p.personId)!}{" "}
-              <span className="font-bold">${p.amount.toFixed(2)}</span>
+              <span className="font-bold">Rs.{p.amount.toFixed(2)}</span>
             </Badge>
           ))}
         </div>
       );
     }
 
-    // If the list is long, show the first two with a "+X more" that expands on hover
     return (
       <TooltipProvider>
         <Tooltip>
@@ -54,7 +52,10 @@ const ExpensesTable = ({ items, onEdit, onDelete }: ExpensesTableProps) => {
               {validPayments.slice(0, 2).map((p, i) => (
                 <Badge key={i} variant="secondary">
                   {personIdtoName(p.personId)!}
-                  <span className="font-bold">${p.amount.toFixed(2)}</span>
+                  {""}
+                  <span className="font-bold">
+                    Rs.{p.amount.toFixed(2)}
+                  </span>{" "}
                 </Badge>
               ))}
               <Badge variant="outline">+{validPayments.length - 2} more</Badge>

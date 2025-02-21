@@ -1,32 +1,27 @@
+"use client";
+
 import React, { useState, useEffect } from "react";
-import {
-  MapContainer,
-  TileLayer,
-  Marker,
-  useMap,
-  useMapEvents,
-} from "react-leaflet";
-import "leaflet/dist/leaflet.css";
-import L from "leaflet";
+import dynamic from "next/dynamic";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Search, Loader2 } from "lucide-react";
 import { useEventStore } from "@/store/useEventStore";
 
-// Fix for Leaflet marker icons
-delete (L.Icon.Default.prototype as any)._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl:
-    "https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.png",
-  iconUrl: "https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png",
-  shadowUrl: "https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png",
+// Dynamically import the Map component with no SSR
+const Map = dynamic(() => import("./Map"), {
+  ssr: false,
+  loading: () => (
+    <div className="h-[300px] flex items-center justify-center bg-gray-100 rounded-lg">
+      <Loader2 className="h-8 w-8 animate-spin" />
+    </div>
+  ),
 });
 
-const EventDetailsStep = () => {
+const EventDetailsStep: React.FC = () => {
   const { currentEvent, setEventDetails } = useEventStore();
-  const [searchQuery, setSearchQuery] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
   // Initialize map center from store coordinates or default values
   const initialCenter: [number, number] = currentEvent?.details
@@ -38,14 +33,6 @@ const EventDetailsStep = () => {
   const [markerPosition, setMarkerPosition] = useState<[number, number] | null>(
     initialCenter[0] !== 51.505 ? initialCenter : null
   );
-
-  // Update store with new coordinates
-  const updateCoordinates = (lat: number, lon: number) => {
-    setEventDetails({
-      ...currentEvent?.details,
-      coordinates: [lat, lon],
-    });
-  };
 
   const handleSearch = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -73,14 +60,22 @@ const EventDetailsStep = () => {
       setIsLoading(false);
     }
   };
-  const fetchAddress = async (lat: number, lon: number) => {
+
+  const updateCoordinates = (lat: number, lon: number): void => {
+    setEventDetails({
+      ...currentEvent?.details,
+      coordinates: [lat, lon],
+    });
+  };
+
+  const fetchAddress = async (lat: number, lon: number): Promise<void> => {
     try {
       const response = await fetch(
         `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`
       );
       const data = await response.json();
 
-      let locationName = searchQuery; // Default to search query
+      let locationName = searchQuery;
 
       if (data && data.address) {
         const { city, town, village } = data.address;
@@ -96,31 +91,10 @@ const EventDetailsStep = () => {
       console.error("Error fetching address:", error);
       setEventDetails({
         ...(currentEvent?.details ?? {}),
-        location: searchQuery, // Use search query as fallback
+        location: searchQuery,
         coordinates: [lat, lon],
       });
     }
-  };
-
-  const MapClickHandler = () => {
-    useMapEvents({
-      click(e) {
-        const { lat, lng } = e.latlng;
-        setMarkerPosition([lat, lng]);
-        setCenter([lat, lng]);
-        updateCoordinates(lat, lng);
-        fetchAddress(lat, lng);
-      },
-    });
-    return null;
-  };
-
-  const MapUpdater = ({ center }: { center: [number, number] }) => {
-    const map = useMap();
-    useEffect(() => {
-      map.setView(center);
-    }, [center, map]);
-    return null;
   };
 
   return (
@@ -131,7 +105,7 @@ const EventDetailsStep = () => {
           <Input
             id="eventTitle"
             value={currentEvent?.details?.eventTitle || ""}
-            onChange={(e) =>
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
               setEventDetails({
                 ...currentEvent?.details,
                 eventTitle: e.target.value,
@@ -149,7 +123,9 @@ const EventDetailsStep = () => {
           <Input
             type="text"
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+              setSearchQuery(e.target.value)
+            }
             placeholder="Search for a location..."
             className="h-11"
           />
@@ -166,23 +142,16 @@ const EventDetailsStep = () => {
 
       <div className="space-y-2">
         <Label>Select Location</Label>
-        <div className="h-[300px] relative rounded-lg overflow-hidden border">
-          <MapContainer
-            center={center}
-            zoom={13}
-            scrollWheelZoom={false}
-            className="h-full w-full"
-            style={{ position: "relative", zIndex: 0 }}
-          >
-            <TileLayer
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            />
-            <MapClickHandler />
-            <MapUpdater center={center} />
-            {markerPosition && <Marker position={markerPosition} />}
-          </MapContainer>
-        </div>
+        <Map
+          center={center}
+          markerPosition={markerPosition}
+          onMapClick={(lat: number, lng: number) => {
+            setMarkerPosition([lat, lng]);
+            setCenter([lat, lng]);
+            updateCoordinates(lat, lng);
+            fetchAddress(lat, lng);
+          }}
+        />
       </div>
 
       <div className="space-y-2">
@@ -190,7 +159,7 @@ const EventDetailsStep = () => {
         <Input
           id="location"
           value={currentEvent?.details?.location || ""}
-          onChange={(e) =>
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
             setEventDetails({
               ...(currentEvent?.details ?? {}),
               location: e.target.value,

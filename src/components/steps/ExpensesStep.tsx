@@ -5,11 +5,15 @@ import { Receipt } from "lucide-react";
 import { BillItem } from "@/types/types";
 import ExpensesTable from "./expenses/ExpensesTable";
 import ExpenseDialog from "./expenses/ExpenseDialog";
-import { ScrollArea } from "../ui/scroll-area";
 
 const ExpensesStep = () => {
-  const { currentEvent, addBillItem, updateBillItem, removeBillItem } =
-    useEventStore();
+  const {
+    currentEvent,
+    addBillItem,
+    updateBillItem,
+    removeBillItem,
+    updateReport,
+  } = useEventStore();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<BillItem | null>(null);
 
@@ -21,6 +25,8 @@ const ExpensesStep = () => {
     }
     setIsDialogOpen(false);
     setEditingItem(null);
+    console.log("trying to update report");
+    updateReport();
   };
 
   return (

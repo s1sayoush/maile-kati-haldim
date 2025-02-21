@@ -3,12 +3,9 @@ import React, { createContext, useState, useContext, useEffect } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "@/firebase/config";
 import { getUserDetails } from "@/firebase/user";
-import { Player } from "@/types/hisab";
-// import { Players } from "@/types/hisab";
-// import { Players } from "@/types/Players";
 
 interface UserContextType {
-  userDetails: Player | null;
+  userDetails: any | null;
   loading: boolean;
   error: any;
   refreshUserDetails: () => Promise<void>;

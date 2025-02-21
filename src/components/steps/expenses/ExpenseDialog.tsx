@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -45,7 +45,6 @@ interface FormData {
   payments: Array<{ personId: string; amount: number }>;
   liablePersons: string[];
   selectedPayer: string;
-  commonAmount: string;
 }
 
 // Components
@@ -76,11 +75,8 @@ const ExpenseDialog: React.FC<ExpenseDialogProps> = ({
     payments: editingItem?.payments || [],
     liablePersons: editingItem?.liablePersons || [],
     selectedPayer: editingItem?.payments?.[0]?.personId || "",
-    commonAmount:
-      editingItem?.payments
-        ?.find((p) => p.personId === "common")
-        ?.amount?.toString() || "",
   });
+  const [formError, setFormError] = useState<string | null>(null);
 
   // Helper functions
   const getNumericValue = (value: string): number => {
@@ -89,11 +85,7 @@ const ExpenseDialog: React.FC<ExpenseDialogProps> = ({
   };
 
   const calculateTotalContributed = (): number => {
-    const individualSum = formData.payments.reduce(
-      (sum, p) => sum + (p.amount || 0),
-      0
-    );
-    return individualSum + getNumericValue(formData.commonAmount);
+    return formData.payments.reduce((sum, p) => sum + (p.amount || 0), 0);
   };
 
   const calculateRemainingAmount = (): number => {
@@ -118,37 +110,40 @@ const ExpenseDialog: React.FC<ExpenseDialogProps> = ({
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setFormError(null); // Reset error state
     const totalAmount = getNumericValue(formData.amount);
 
-    let payments = [];
-    switch (formData.paymentMethod) {
-      case PaymentMethod.SINGLE:
-        payments = [
-          {
-            personId: formData.selectedPayer,
-            amount: totalAmount,
-          },
-        ];
-        break;
-      case PaymentMethod.COMMON:
-        payments = [
-          {
-            personId: "common",
-            amount: totalAmount,
-          },
-        ];
-        break;
-      case PaymentMethod.COMBINATION:
-        payments = [
-          ...formData.payments,
-          {
-            personId: "common",
-            amount: getNumericValue(formData.commonAmount),
-          },
-        ].filter((p) => p.amount > 0);
-        break;
+    // 🔹 Validation: Ensure at least one liable person is selected
+    if (formData.liablePersons.length === 0) {
+      setFormError("Please select at least one liable person.");
+      return;
     }
 
+    let payments: { personId: string; amount: number }[] = [];
+
+    switch (formData.paymentMethod) {
+      case PaymentMethod.SINGLE:
+        if (!formData.selectedPayer) {
+          setFormError("Please select a payer for the expense.");
+          return;
+        }
+        payments = [{ personId: formData.selectedPayer, amount: totalAmount }];
+        break;
+
+      case PaymentMethod.COMBINATION:
+        payments = formData.payments.filter((p) => p.amount > 0);
+        if (payments.length === 0) {
+          setFormError("At least one person must contribute to the payment.");
+          return;
+        }
+        break;
+
+      default:
+        setFormError("Invalid payment method selected.");
+        return;
+    }
+
+    // 🔹 If no errors, submit the form
     onSubmit({
       itemName: formData.itemName,
       amount: totalAmount,
@@ -185,21 +180,6 @@ const ExpenseDialog: React.FC<ExpenseDialogProps> = ({
           </div>
         );
 
-      case PaymentMethod.COMMON:
-        return (
-          <div className="space-y-2">
-            <Label>Common Payment Amount</Label>
-            <Input
-              type="number"
-              min="0"
-              step="0.01"
-              value={formData.amount}
-              onChange={(e) => handleAmountChange(e.target.value)}
-              className="w-full"
-            />
-          </div>
-        );
-
       case PaymentMethod.COMBINATION:
         const remainingAmount = calculateRemainingAmount();
 
@@ -213,7 +193,7 @@ const ExpenseDialog: React.FC<ExpenseDialogProps> = ({
             </div>
 
             <ScrollArea>
-              <div className="grid gap-6 md:grid-cols-2 max-h-[33vh] overflow-y-auto">
+              <div className="gap-6  max-h-[33vh] overflow-y-auto">
                 <PaymentCard
                   label="Individual Contributions"
                   icon={<DollarSign className="h-4 w-4" />}
@@ -249,42 +229,6 @@ const ExpenseDialog: React.FC<ExpenseDialogProps> = ({
                         </div>
                       );
                     })}
-                  </div>
-                </PaymentCard>
-
-                <PaymentCard
-                  label="Common Pool"
-                  icon={<Users className="h-4 w-4" />}
-                >
-                  <div className="space-y-4">
-                    <div className="space-y-1">
-                      <div className="flex justify-between text-sm">
-                        <Label>Shared Amount</Label>
-                        <span className="text-muted-foreground">
-                          {formData.amount
-                            ? (
-                                (getNumericValue(formData.commonAmount) /
-                                  getNumericValue(formData.amount)) *
-                                100
-                              ).toFixed(1)
-                            : "0.0"}
-                          %
-                        </span>
-                      </div>
-                      <Input
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value={formData.commonAmount}
-                        className="h-8"
-                        onChange={(e) =>
-                          setFormData((prev) => ({
-                            ...prev,
-                            commonAmount: e.target.value,
-                          }))
-                        }
-                      />
-                    </div>
                   </div>
                 </PaymentCard>
               </div>
@@ -376,7 +320,6 @@ const ExpenseDialog: React.FC<ExpenseDialogProps> = ({
                     paymentMethod: value as PaymentMethod,
                     payments: [],
                     selectedPayer: "",
-                    commonAmount: "",
                   }))
                 }
               >
@@ -384,11 +327,10 @@ const ExpenseDialog: React.FC<ExpenseDialogProps> = ({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {Object.values(PaymentMethod).map((method) => (
-                    <SelectItem key={method} value={method}>
-                      {method}
-                    </SelectItem>
-                  ))}
+                  <SelectItem value={PaymentMethod.SINGLE}>Single</SelectItem>
+                  <SelectItem value={PaymentMethod.COMBINATION}>
+                    Combination
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -457,6 +399,11 @@ const ExpenseDialog: React.FC<ExpenseDialogProps> = ({
               </div>
             </ScrollArea>
           </div>
+          {formError && (
+            <div className="p-3 bg-destructive/10 border border-destructive text-destructive rounded-md text-sm">
+              {formError}
+            </div>
+          )}
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={onClose}>

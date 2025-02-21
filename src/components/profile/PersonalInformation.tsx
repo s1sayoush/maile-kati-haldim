@@ -9,10 +9,14 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { PersonalDetails } from "@/types/hisab";
-
 interface PersonalInfoFormProps {
-  formData: PersonalDetails;
+  formData: {
+    firstName: string;
+    middleName: string;
+    lastName: string;
+    email: string;
+    phone: string;
+  };
   isEditing: boolean;
   isLoading: boolean;
   onInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
