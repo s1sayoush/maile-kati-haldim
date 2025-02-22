@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Table,
@@ -12,11 +12,38 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { getAllEvent } from "@/firebase/event";
+import { deleteEvent, getAllUserEvents } from "@/firebase/event";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  MoreVertical,
+  Edit,
+  Trash2,
+  MapPin,
+  Users,
+  DollarSign,
+  FileText,
+  Calendar,
+} from "lucide-react";
 import { Event } from "@/types/types";
+import { useUser } from "@/providers/UserContext";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+} from "../ui/alert-dialog";
 
-// Loading skeleton for desktop view
+// Loading skeletons remain the same...
 const TableLoadingSkeleton = () => (
   <div className="hidden md:block">
     <div className="space-y-4">
@@ -28,6 +55,7 @@ const TableLoadingSkeleton = () => (
               <Skeleton className="h-4 w-[200px]" />
               <Skeleton className="h-4 w-[100px]" />
               <Skeleton className="h-4 w-[100px]" />
+              <Skeleton className="h-4 w-[100px]" />
               <Skeleton className="h-8 w-[100px]" />
             </div>
           ))}
@@ -37,7 +65,6 @@ const TableLoadingSkeleton = () => (
   </div>
 );
 
-// Loading skeleton for mobile view
 const CardLoadingSkeleton = () => (
   <div className="block md:hidden space-y-4">
     <Skeleton className="h-8 w-[200px]" />
@@ -45,6 +72,7 @@ const CardLoadingSkeleton = () => (
       <Card key={i} className="w-full">
         <CardContent className="p-4 space-y-3">
           <Skeleton className="h-4 w-[150px]" />
+          <Skeleton className="h-4 w-[100px]" />
           <Skeleton className="h-4 w-[100px]" />
           <Skeleton className="h-4 w-[100px]" />
           <Skeleton className="h-8 w-[100px]" />
@@ -55,27 +83,53 @@ const CardLoadingSkeleton = () => (
 );
 
 const EventList = () => {
-  const [events, setEvents] = useState<Event[]>([]);
-
+  const { userDetails, loading: userLoading } = useUser();
   const router = useRouter();
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchEvents = async () => {
-      try {
-        const data = await getAllEvent();
-        setEvents(data as any);
-      } catch (error) {
-        console.error("Failed to fetch events:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const queryClient = useQueryClient();
 
-    fetchEvents();
-  }, []);
+  const { data: events = [], isLoading } = useQuery<Event[]>({
+    queryKey: ["userEvents", userDetails?.uid],
+    queryFn: async () => {
+      if (!userDetails?.uid) return [];
+      return await getAllUserEvents(userDetails.uid);
+    },
+    enabled: !!userDetails?.uid,
+  });
 
-  if (loading) {
+  const [deleteDialog, setDeleteDialog] = useState<{
+    isOpen: boolean;
+    event: Event | null;
+  }>({
+    isOpen: false,
+    event: null,
+  });
+
+  const handleEdit = (eventId: string) => {
+    router.push(`./events/edit/${eventId}`);
+  };
+
+  const handleDelete = async (event: Event) => {
+    setDeleteDialog({
+      isOpen: true,
+      event,
+    });
+  };
+
+  const confirmDelete = async () => {
+    if (deleteDialog.event) {
+      await deleteEvent(deleteDialog.event.id!);
+
+      queryClient.invalidateQueries({
+        queryKey: ["userEvents", userDetails?.uid],
+      });
+    }
+    setDeleteDialog({
+      isOpen: false,
+      event: null, // Reset the state after deletion
+    });
+  };
+  if (isLoading || userLoading) {
     return (
       <div className="p-6">
         <TableLoadingSkeleton />
@@ -87,44 +141,71 @@ const EventList = () => {
   // Desktop view
   const DesktopView = () => (
     <div className="hidden md:block">
-      <Table>
-        <TableHeader>
+      <Table className="border rounded-lg">
+        <TableHeader className="bg-card">
           <TableRow>
-            <TableHead>Event Name</TableHead>
-            <TableHead>Date</TableHead>
-            <TableHead>Total Amount</TableHead>
-            <TableHead>Action</TableHead>
+            <TableHead className="px-4 py-2">Event Name</TableHead>
+            <TableHead className="px-4 py-2">Location</TableHead>
+            <TableHead className="px-4 py-2">Date</TableHead>
+            <TableHead className="px-4 py-2">Participants</TableHead>
+            <TableHead className="px-4 py-2">Total Amount</TableHead>
+            <TableHead className="px-4 py-2">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {events.length > 0 ? (
             events.map((event, index) => (
               <TableRow key={index}>
-                <TableCell className="font-medium">
-                  {event.id || "Unnamed Event"}
+                <TableCell className="px-4 py-2 font-medium">
+                  {event.details?.eventTitle || "Unnamed Event"}
                 </TableCell>
-                <TableCell>
+                <TableCell className="px-4 py-2">
+                  {event.details?.location || "No location"}
+                </TableCell>
+                <TableCell className="px-4 py-2">
                   {event.details?.date
                     ? new Date(event.details.date).toLocaleDateString()
                     : "N/A"}
                 </TableCell>
-                <TableCell>
+                <TableCell className="px-4 py-2">
+                  {event.participants?.length || 0}
+                </TableCell>
+                <TableCell className="px-4 py-2">
                   ${event.report?.totalAmount?.toFixed(2) || "0.00"}
                 </TableCell>
-                <TableCell>
+                <TableCell className="px-4 py-2 space-x-2">
                   <Button
-                    onClick={() => router.push(`./reports/${event.id}`)}
+                    onClick={() =>
+                      router.push(`/dashboard/reports/${event.id}`)
+                    }
                     variant="outline"
                     size="sm"
                   >
                     View Report
                   </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="sm">
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => handleEdit(event.id!)}>
+                        <Edit className="mr-2 h-4 w-4" />
+                        Edit
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleDelete(event)}>
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </TableCell>
               </TableRow>
             ))
           ) : (
             <TableRow>
-              <TableCell colSpan={4} className="text-center">
+              <TableCell colSpan={6} className="px-4 py-2 text-center">
                 No events found.
               </TableCell>
             </TableRow>
@@ -139,48 +220,129 @@ const EventList = () => {
     <div className="block md:hidden space-y-4">
       {events.length > 0 ? (
         events.map((event, index) => (
-          <Card key={index}>
-            <CardContent className="p-4">
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <div className="font-medium">
-                    {event.id || "Unnamed Event"}
+          <Card key={index} className="overflow-hidden">
+            <CardContent className="p-0">
+              <div className=" p-4">
+                <div className="flex justify-between items-start mb-3">
+                  <div>
+                    <h3 className="font-semibold text-lg">
+                      {event.details?.eventTitle || "Unnamed Event"}
+                    </h3>
+                    <p className="text-sm text-gray-600">
+                      {event.details?.date
+                        ? new Date(event.details.date).toLocaleDateString()
+                        : "N/A"}
+                    </p>
+                  </div>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => handleEdit(event.id!)}>
+                        <Edit className="mr-2 h-4 w-4" />
+                        Edit
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => handleDelete(event)}
+                        className="text-red-600"
+                      >
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 mb-4">
+                  <div className="flex items-center">
+                    <MapPin className="h-4 w-4 text-gray-500 mr-2" />
+                    <span className="text-sm text-gray-600">
+                      {event.details?.location || "No location"}
+                    </span>
+                  </div>
+                  <div className="flex items-center">
+                    <Users className="h-4 w-4 text-gray-500 mr-2" />
+                    <span className="text-sm text-gray-600">
+                      {event.participants?.length || 0} participants
+                    </span>
+                  </div>
+                  <div className="flex items-center">
+                    <DollarSign className="h-4 w-4 text-gray-500 mr-2" />
+                    <span className="text-sm text-gray-600">
+                      ${event.report?.totalAmount?.toFixed(2) || "0.00"}
+                    </span>
                   </div>
                 </div>
-                <div className="text-sm text-gray-500">
-                  Date:{" "}
-                  {event.details?.date
-                    ? new Date(event.details.date).toLocaleDateString()
-                    : "N/A"}
+
+                <div className="flex space-x-2">
+                  <Button
+                    onClick={() => router.push(`dashboard/reports/${event.id}`)}
+                    variant="default"
+                    size="sm"
+                    className="flex-1"
+                  >
+                    <FileText className="h-4 w-4 mr-2" />
+                    View Report
+                  </Button>
                 </div>
-                <div className="text-sm text-gray-500">
-                  Amount: ${event.report?.totalAmount?.toFixed(2) || "0.00"}
-                </div>
-                <Button
-                  onClick={() => router.push(`./reports/${event.id}`)}
-                  variant="outline"
-                  size="sm"
-                  className="w-full mt-2"
-                >
-                  View Report
-                </Button>
               </div>
             </CardContent>
           </Card>
         ))
       ) : (
-        <div className="text-center py-4">No events found.</div>
+        <div className="text-center py-8">
+          <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+          <p className="text-gray-500 font-medium">No events found</p>
+        </div>
       )}
     </div>
   );
-
   return (
-    <div className="p-4 md:p-6">
+    <div className="p-2">
       <h1 className="text-xl md:text-2xl font-semibold mb-4 my-2">
         Past Events
       </h1>
       <DesktopView />
       <MobileView />
+
+      <AlertDialog
+        open={deleteDialog.isOpen}
+        onOpenChange={(isOpen) =>
+          setDeleteDialog((prev) => ({ ...prev, isOpen }))
+        }
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <h3>Are you sure you want to remove this item?</h3>
+          </AlertDialogHeader>
+          <AlertDialogDescription>
+            This action cannot be undone. You are about to delete the item:{" "}
+            <strong>
+              {deleteDialog.event?.details?.eventTitle}{" "}
+              {deleteDialog.event?.details?.date
+                ? new Date(deleteDialog.event.details.date).toLocaleDateString()
+                : "N/A"}
+            </strong>
+          </AlertDialogDescription>
+
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              onClick={() => setDeleteDialog({ isOpen: false, event: null })}
+            >
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="bg-red-500 hover:bg-red-600"
+            >
+              Remove
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

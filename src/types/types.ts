@@ -47,6 +47,7 @@ export interface Deductible {
 }
 
 export interface Event {
+  deletedAt?: any;
   id?: string;
   details: EventDetails;
   participants: Person[];

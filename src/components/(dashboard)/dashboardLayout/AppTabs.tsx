@@ -24,7 +24,7 @@ const items = [
   },
   {
     title: "Naya Hisab",
-    url: "/dashboard/new",
+    url: "/dashboard/events",
     icon: Calculator,
   },
   {

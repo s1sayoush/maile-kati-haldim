@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import {
   Card,
   CardContent,
@@ -54,13 +54,18 @@ export default function ExpenseSplitterPage() {
   const event = {
     ...currentState.currentEvent,
   };
+  const { userDetails } = useUser();
+  const { uid } = userDetails;
+  const [finishing, setFinishing] = useState(false);
 
   console.log("currentState", JSON.stringify(currentState, null, 2));
   const handleNext = async () => {
     const id = nanoid();
     if (currentStep == STEPS.length - 1) {
-      // await pushEvent(event, id);
+      setFinishing(true);
+      await pushEvent(uid, event, id);
       resetStore();
+      setFinishing(false);
       router.refresh();
       router.push(`./reports/${id}`);
     }
@@ -131,9 +136,13 @@ export default function ExpenseSplitterPage() {
             >
               Previous
             </Button>
-            <Button onClick={handleNext}>
-              {currentStep === STEPS.length - 1 ? "Finish" : "Next"}
-            </Button>
+            <Button onClick={handleNext} disabled={finishing}>
+              {finishing
+                ? "Finishing"
+                : currentStep === STEPS.length - 1
+                ? "Finish"
+                : "Next"}
+            </Button>{" "}
           </div>
         </CardContent>
       </Card>
