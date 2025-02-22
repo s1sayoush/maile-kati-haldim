@@ -26,21 +26,47 @@ const Map = dynamic(() => import("./Map"), {
   ),
 });
 
-const EventDetailsStep: React.FC = () => {
+const EventDetailsStep = () => {
   const { currentEvent, setEventDetails } = useEventStore();
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
-  // Initialize map center from store coordinates or default values
-  const initialCenter: [number, number] = currentEvent?.details
-    ?.coordinates?.[0]
-    ? [currentEvent.details.coordinates[0], currentEvent.details.coordinates[1]]
-    : [51.505, -0.09];
+  // Initialize map center from store coordinates
+  const initialCenter: [number, number] = [
+    currentEvent.details.coordinates![0],
+    currentEvent.details.coordinates![1]!,
+  ];
 
-  const [center, setCenter] = useState<[number, number]>(initialCenter);
+  // Initialize state with proper null checks
+  const [center, setCenter] = useState<[number, number]>(() => {
+    if (currentEvent.details.coordinates?.length === 2) {
+      return [
+        currentEvent.details.coordinates[0], // latitude
+        currentEvent.details.coordinates[1], // longitude
+      ];
+    }
+    return [51.505, -0.09]; // Default fallback
+  });
+
   const [markerPosition, setMarkerPosition] = useState<[number, number] | null>(
-    initialCenter[0] !== 51.505 ? initialCenter : null
+    currentEvent.details.coordinates?.length === 2
+      ? [
+          currentEvent.details.coordinates[0], // latitude
+          currentEvent.details.coordinates[1], // longitude
+        ]
+      : null
   );
+
+  console.log("init", initialCenter);
+
+  // Sync with store updates
+  useEffect(() => {
+    if (currentEvent.details.coordinates?.length === 2) {
+      const [lat, lng] = currentEvent.details.coordinates;
+      setCenter([lat, lng]);
+      setMarkerPosition([lat, lng]);
+    }
+  }, [currentEvent.details.coordinates]);
 
   const handleSearch = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();

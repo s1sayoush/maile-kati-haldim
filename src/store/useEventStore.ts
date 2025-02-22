@@ -283,5 +283,5 @@ export const useEventStore = create<EventStore>((set, get) => ({
   previousStep: () => set((state) => ({ currentStep: state.currentStep - 1 })),
   setStep: (step) => set({ currentStep: step }),
 
-  resetStore: () => set({ currentEvent: { ...initialEvent }, currentStep: -1 }),
+  resetStore: () => set({ currentEvent: { ...initialEvent }, currentStep: 0 }),
 }));

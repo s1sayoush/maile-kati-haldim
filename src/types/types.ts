@@ -65,3 +65,9 @@ export interface Report {
   finalOwedByPerson?: { [personId: string]: number };
   netBalances?: { [personId: string]: number };
 }
+
+export type Step = {
+  id: string;
+  title: string;
+  component: React.ComponentType;
+};
