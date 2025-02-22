@@ -1,35 +1,28 @@
 "use client";
+
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import ExpenseAnalysisDashboard from "@/components/report/ExpenseAnalysisDashboard";
 import { getEvent } from "@/firebase/event";
-import { Event } from "@/types/types";
 import { useParams } from "next/navigation";
-import React, { useEffect, useState } from "react";
+import React from "react";
+import { Event } from "@/types/types";
 
 const Report = () => {
-  const params = useParams();
-  const { id } = params;
-  const [loading, setLoading] = useState(false);
-  const [data, setData] = useState<Event | null>(null);
+  const { id } = useParams();
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        const details = await getEvent(id as string);
-        setData(details!);
-      } catch (error) {
-        console.error("Error fetching event:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const cachedEvent = queryClient.getQueryData(["userEvents", id]);
 
-    fetchData();
-  }, [id]);
+  const { data, isLoading } = useQuery({
+    queryKey: ["userEvents", id],
+    queryFn: () => getEvent(id as string),
+    enabled: !!id && !cachedEvent,
+    initialData: cachedEvent as Event,
+  });
 
   return (
     <div className="container mx-auto">
-      {loading ? (
+      {isLoading ? (
         <div className="flex justify-center items-center h-64">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
         </div>
