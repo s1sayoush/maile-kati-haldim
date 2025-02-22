@@ -34,7 +34,7 @@ const ExpensesStep = () => {
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-2xl font-semibold">Expenses</h2>
-          <p className="text-sm text-gray-500 mt-1">
+          <p className="text-xs md:text-sm text-gray-500 mt-1">
             Manage event expenses and track payments
           </p>
         </div>

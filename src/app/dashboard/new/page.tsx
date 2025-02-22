@@ -16,6 +16,12 @@ import EventDetailsStep from "@/components/steps/EventDetailsStep";
 import ParticipantsStep from "@/components/steps/ParticipantsStep";
 import ReviewStep from "@/components/steps/ReviewStep";
 import ExpensesStep from "@/components/steps/ExpensesStep";
+import { useAuth } from "@/providers/AuthProvider";
+import { useUser } from "@/providers/UserContext";
+import { Event } from "@/types/types";
+import { pushEvent } from "@/firebase/event";
+import { nanoid } from "nanoid";
+import { useRouter } from "next/navigation";
 
 const STEPS = [
   {
@@ -41,11 +47,24 @@ const STEPS = [
 ] as const;
 
 export default function ExpenseSplitterPage() {
-  const { currentStep, nextStep, previousStep } = useEventStore();
+  const { currentStep, nextStep, previousStep, resetStore } = useEventStore();
   const currentState = useEventStore.getState();
   const CurrentStepComponent = STEPS[currentStep].component;
+  const router = useRouter();
+  const event = {
+    ...currentState.currentEvent,
+  };
 
-  // console.log("currentState", JSON.stringify(currentState, null, 2));
+  console.log("currentState", JSON.stringify(currentState, null, 2));
+  const handleNext = async () => {
+    const id = nanoid();
+    if (currentStep == STEPS.length - 1) {
+      await pushEvent(event, id);
+      resetStore();
+      router.push(`./reports/${id}`);
+    }
+    nextStep();
+  };
 
   return (
     <main className="container mx-auto p-4 md:p-8">
@@ -111,10 +130,7 @@ export default function ExpenseSplitterPage() {
             >
               Previous
             </Button>
-            <Button
-              onClick={nextStep}
-              disabled={currentStep === STEPS.length - 1}
-            >
+            <Button onClick={handleNext}>
               {currentStep === STEPS.length - 1 ? "Finish" : "Next"}
             </Button>
           </div>

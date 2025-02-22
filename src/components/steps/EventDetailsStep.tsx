@@ -7,6 +7,14 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Search, Loader2 } from "lucide-react";
 import { useEventStore } from "@/store/useEventStore";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { format } from "date-fns";
+import { Calendar as CalendarIcon } from "lucide-react";
+import { Calendar } from "../ui/calendar";
 
 // Dynamically import the Map component with no SSR
 const Map = dynamic(() => import("./Map"), {
@@ -78,8 +86,30 @@ const EventDetailsStep: React.FC = () => {
       let locationName = searchQuery;
 
       if (data && data.address) {
-        const { city, town, village } = data.address;
-        locationName = city || town || village || searchQuery;
+        const {
+          name,
+          amenity,
+          building,
+          road,
+          neighbourhood,
+          suburb,
+          city,
+          town,
+          village,
+        } = data.address;
+
+        // Prioritize more specific location details over broader ones
+        locationName =
+          name || // Specific place name (e.g., college, landmark)
+          amenity || // Points of interest like restaurants, hospitals, schools
+          building || // Specific buildings
+          road || // Street address
+          neighbourhood || // Local area
+          suburb || // District/suburb
+          city ||
+          town ||
+          village || // Larger administrative areas
+          searchQuery; // Fallback to search query
       }
 
       setEventDetails({
@@ -99,9 +129,12 @@ const EventDetailsStep: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="eventTitle">Event Title</Label>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+        {/* Event Title Field */}
+        <div className="flex flex-col space-y-2 w-full">
+          <Label htmlFor="eventTitle" className="text-base font-medium">
+            Event Title
+          </Label>
           <Input
             id="eventTitle"
             value={currentEvent?.details?.eventTitle || ""}
@@ -112,8 +145,49 @@ const EventDetailsStep: React.FC = () => {
               })
             }
             placeholder="Enter event title"
-            className="h-11"
+            className="h-11 px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary"
           />
+        </div>
+
+        {/* Date Picker */}
+        <div className="flex flex-col space-y-2 w-full">
+          <Label htmlFor="date" className="text-base font-medium">
+            Date
+          </Label>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className="h-11 px-4 border border-gray-300 rounded-lg flex items-center justify-between w-full focus:ring-2 focus:ring-primary"
+              >
+                <div className="flex items-center space-x-2">
+                  <CalendarIcon className="h-4 w-4 text-gray-500" />
+                  <span>
+                    {currentEvent?.details?.date
+                      ? format(currentEvent.details.date, "PPP")
+                      : "Pick a date"}
+                  </span>
+                </div>
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0 shadow-lg rounded-lg">
+              <Calendar
+                mode="single"
+                selected={
+                  currentEvent?.details?.date
+                    ? new Date(currentEvent.details.date)
+                    : undefined
+                }
+                onSelect={(date) =>
+                  setEventDetails({
+                    ...currentEvent?.details,
+                    date: date,
+                  })
+                }
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
         </div>
       </div>
 

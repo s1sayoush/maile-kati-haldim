@@ -136,6 +136,10 @@ const ExpenseDialog: React.FC<ExpenseDialogProps> = ({
           setFormError("At least one person must contribute to the payment.");
           return;
         }
+        if (calculateRemainingAmount() !== 0) {
+          setFormError("Total amount does not match the sum of contributions.");
+          return;
+        }
         break;
 
       default:

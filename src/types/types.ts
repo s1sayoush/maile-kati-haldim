@@ -2,6 +2,7 @@ export interface EventDetails {
   eventTitle?: string;
   location?: string;
   coordinates?: [number, number];
+  date?: string | Date;
 }
 
 export interface Person {
@@ -46,6 +47,7 @@ export interface Deductible {
 }
 
 export interface Event {
+  id?: string;
   details: EventDetails;
   participants: Person[];
 

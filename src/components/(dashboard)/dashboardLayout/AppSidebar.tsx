@@ -43,12 +43,12 @@ const items = [
   },
   {
     title: "Naya Hisab",
-    url: "/dashboard/naya",
+    url: "/dashboard/new",
     icon: Calculator,
   },
   {
     title: "Purano kharcha",
-    url: "/dashboard/purano",
+    url: "/dashboard/reports",
     icon: ScrollText,
   },
   {

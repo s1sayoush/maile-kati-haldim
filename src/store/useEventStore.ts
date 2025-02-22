@@ -47,7 +47,12 @@ const initialReport: Report = {
 };
 
 const initialEvent: Event = {
-  details: {},
+  details: {
+    eventTitle: "",
+    location: "",
+    coordinates: [27.7172, 85.324],
+    date: new Date().toDateString(),
+  },
   participants: [],
   items: [],
   report: initialReport,
