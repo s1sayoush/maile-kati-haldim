@@ -57,6 +57,8 @@ const ExpensesStep = () => {
     });
   };
 
+  console.log("currentItem");
+
   // Confirm deletion
   const confirmDelete = () => {
     if (deleteDialog.item) {

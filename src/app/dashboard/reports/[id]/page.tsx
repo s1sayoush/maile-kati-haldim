@@ -1,11 +1,11 @@
 "use client";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import ExpenseAnalysisDashboard from "@/components/report/ExpenseAnalysisDashboard";
 import { getEvent } from "@/firebase/event";
 import { useParams } from "next/navigation";
 import React from "react";
 import { Event } from "@/types/types";
+import ExpenseAnalysisDashboard from "@/components/report/ExpenseAnalysisDashboard";
 
 const Report = () => {
   const { id } = useParams();

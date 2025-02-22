@@ -64,9 +64,10 @@ function EventInitializer({
   return null;
 }
 
-function StepperContent() {
+export function StepperContent() {
   const { currentStep, nextStep, previousStep } = useEventStore();
-  const CurrentStepComponent = STEPS[currentStep].component;
+  const CurrentStepComponent = STEPS[currentStep]?.component;
+  console.log("CurrentStepComponent:", CurrentStepComponent); // Debugging
   const [finishing, setFinishing] = useState(false);
   const router = useRouter();
   const { userDetails } = useUser();
@@ -77,7 +78,7 @@ function StepperContent() {
   };
 
   const handleNext = async () => {
-    if (currentStep === STEPS.length - 1) {
+    if (currentStep === STEPS.length - 2) {
       setFinishing(true);
       try {
         await pushEvent(userDetails?.uid || "", event);

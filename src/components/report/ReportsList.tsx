@@ -178,7 +178,7 @@ const EventList = () => {
                     onClick={() =>
                       router.push(`/dashboard/reports/${event.id}`)
                     }
-                    variant="outline"
+                    variant="default"
                     size="sm"
                   >
                     View Report
