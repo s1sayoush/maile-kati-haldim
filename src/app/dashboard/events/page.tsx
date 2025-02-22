@@ -1,13 +1,7 @@
 "use client";
 
-import React, { useCallback, useEffect, useState } from "react";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
+import React, { Suspense, useCallback, useEffect, useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -16,9 +10,7 @@ import EventDetailsStep from "@/components/steps/EventDetailsStep";
 import ParticipantsStep from "@/components/steps/ParticipantsStep";
 import ReviewStep from "@/components/steps/ReviewStep";
 import ExpensesStep from "@/components/steps/ExpensesStep";
-import { useAuth } from "@/providers/AuthProvider";
 import { useUser } from "@/providers/UserContext";
-import { Event } from "@/types/types";
 import { pushEvent } from "@/firebase/event";
 import { nanoid } from "nanoid";
 import {
@@ -51,54 +43,99 @@ const STEPS = [
   },
 ] as const;
 
-export default function ExpenseSplitterPage() {
-  const params = useParams();
-  const pathname = usePathname();
-  const router = useRouter();
+// Separate component for the search params logic
+function EventInitializer({
+  onInitialize,
+}: {
+  onInitialize: (id: string, isEdit: boolean) => void;
+}) {
   const searchParams = useSearchParams();
-
-  const { currentStep, nextStep, previousStep, resetStore, initializeStore } =
-    useEventStore();
-  const currentState = useEventStore.getState();
-  const CurrentStepComponent = STEPS[currentStep].component;
-
-  const { userDetails, loading: userLoading } = useUser();
-  const [uid, setUid] = useState<string>("");
-  const [eventId, setEventId] = useState<string>("");
+  const params = useParams();
 
   const queryEventId = searchParams.get("eventId");
   const isEditMode =
     searchParams.get("edit") === "true" && Boolean(queryEventId);
 
+  useEffect(() => {
+    const id = queryEventId || params.id || nanoid();
+    onInitialize(id as string, isEditMode);
+  }, [queryEventId, params.id, isEditMode, onInitialize]);
+
+  return null;
+}
+
+function StepperContent() {
+  const { currentStep, nextStep, previousStep } = useEventStore();
+  const CurrentStepComponent = STEPS[currentStep].component;
+  const [finishing, setFinishing] = useState(false);
+  const router = useRouter();
+  const { userDetails } = useUser();
+  const currentState = useEventStore.getState();
+
   const event = {
     ...currentState.currentEvent,
   };
 
-  useEffect(() => {
-    const id = queryEventId || params.id || nanoid();
-    setEventId(id as string);
-  }, [queryEventId, params.id]);
-
-  useEffect(() => {
-    if (userDetails && eventId) {
-      setUid(userDetails.uid);
-      initializeStore(eventId, isEditMode);
-    }
-  }, [userDetails, eventId, initializeStore, isEditMode]);
-
-  const [finishing, setFinishing] = useState(false);
-
   const handleNext = async () => {
-    if (currentStep == STEPS.length - 1) {
+    if (currentStep === STEPS.length - 1) {
       setFinishing(true);
-      await pushEvent(uid, event);
-      resetStore();
-      setFinishing(false);
-      router.refresh();
-      router.push(`./reports/${event.id}`);
+      try {
+        await pushEvent(userDetails?.uid || "", event);
+        useEventStore.getState().resetStore();
+        router.refresh();
+        router.push(`./reports/${event.id}`);
+      } catch (error) {
+        console.error("Error pushing event:", error);
+        // Handle error appropriately
+      } finally {
+        setFinishing(false);
+      }
+    } else {
+      nextStep();
     }
-    nextStep();
   };
+
+  return (
+    <>
+      <CurrentStepComponent />
+      <div className="flex justify-between mt-8">
+        <Button
+          variant="outline"
+          onClick={previousStep}
+          disabled={currentStep === 0}
+        >
+          Previous
+        </Button>
+        <Button onClick={handleNext} disabled={finishing}>
+          {finishing
+            ? "Finishing"
+            : currentStep === STEPS.length - 1
+            ? "Finish"
+            : "Next"}
+        </Button>
+      </div>
+    </>
+  );
+}
+
+export default function ExpenseSplitterPage() {
+  const { userDetails, loading: userLoading } = useUser();
+  const [eventId, setEventId] = useState<string>("");
+  const { initializeStore } = useEventStore();
+
+  const handleInitialize = useCallback(
+    (id: string, isEdit: boolean) => {
+      setEventId(id);
+      if (userDetails) {
+        initializeStore(id, isEdit);
+      }
+    },
+    [userDetails, initializeStore]
+  );
+
+  if (userLoading) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <main className="container mx-auto p-4 md:p-8">
@@ -110,14 +147,13 @@ export default function ExpenseSplitterPage() {
         {/* Horizontal Stepper */}
         <div className="relative flex justify-between items-center px-6 md:px-12 pb-6">
           {STEPS.map((step, index) => {
-            const isActive = index === currentStep;
-            const isCompleted = index <= currentStep;
+            const isActive = index === useEventStore.getState().currentStep;
+            const isCompleted = index <= useEventStore.getState().currentStep;
             return (
               <div
                 key={step.id}
                 className="flex flex-col items-center w-full relative"
               >
-                {/* Progress line */}
                 {index !== 0 && (
                   <div
                     className={cn(
@@ -126,7 +162,6 @@ export default function ExpenseSplitterPage() {
                     )}
                   />
                 )}
-                {/* Step Indicator */}
                 <div
                   className={cn(
                     "flex items-center justify-center w-10 h-10 rounded-full border-2 text-sm font-medium z-10",
@@ -139,7 +174,6 @@ export default function ExpenseSplitterPage() {
                 >
                   {isCompleted ? <Check className="w-4 h-4" /> : index + 1}
                 </div>
-                {/* Step Title */}
                 <span
                   className={cn(
                     "mt-2 text-sm font-medium",
@@ -154,24 +188,10 @@ export default function ExpenseSplitterPage() {
         </div>
 
         <CardContent>
-          <CurrentStepComponent />
-
-          <div className="flex justify-between mt-8">
-            <Button
-              variant="outline"
-              onClick={previousStep}
-              disabled={currentStep === 0}
-            >
-              Previous
-            </Button>
-            <Button onClick={handleNext} disabled={finishing}>
-              {finishing
-                ? "Finishing"
-                : currentStep === STEPS.length - 1
-                ? "Finish"
-                : "Next"}
-            </Button>{" "}
-          </div>
+          <Suspense fallback={<div>Loading...</div>}>
+            <EventInitializer onInitialize={handleInitialize} />
+            <StepperContent />
+          </Suspense>
         </CardContent>
       </Card>
 
@@ -179,7 +199,7 @@ export default function ExpenseSplitterPage() {
         <div className="mt-8 p-4 bg-muted rounded-md">
           <div className="text-sm font-mono">
             <div className="font-semibold mb-2">Current Form Data:</div>
-            <pre>{JSON.stringify(currentState, null, 2)}</pre>
+            <pre>{JSON.stringify(useEventStore.getState(), null, 2)}</pre>
           </div>
         </div>
       )}
