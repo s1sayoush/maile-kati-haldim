@@ -13,20 +13,22 @@ import {
   query,
 } from "firebase/firestore";
 
-export const pushEvent = async (uid: string, event: any, eventId: string) => {
+export const pushEvent = async (uid: string, event: Event) => {
   try {
     const userRef = doc(firestore, "users", uid);
     const userRefSnapShot = await getDoc(userRef);
     if (!userRefSnapShot.exists()) {
       throw new Error("User not found");
     }
+
+    const eventId = event.id;
     await updateDoc(userRef, {
       events: arrayUnion(eventId),
     });
 
     console.log("Trying to push event:", event);
-    const eventRef = doc(firestore, "events", eventId);
-    await setDoc(eventRef, { id: eventId, ...event, deletedAt: null });
+    const eventRef = doc(firestore, "events", eventId!);
+    await setDoc(eventRef, { ...event, deletedAt: null });
   } catch (error) {
     console.error("Error pushing event", error);
     throw error;
@@ -47,7 +49,7 @@ export const deleteEvent = async (eventId: string) => {
   }
 };
 
-export const getEvent = async (id: string): Promise<Event> => {
+export const getEvent = async (id: string) => {
   try {
     const eventRef = doc(firestore, "events", id);
     const eventDoc = await getDoc(eventRef);
@@ -55,11 +57,7 @@ export const getEvent = async (id: string): Promise<Event> => {
       const eventData = eventDoc.data() as Event;
       if (eventData.deletedAt === null) {
         return eventData;
-      } else {
-        throw new Error("Event has been deleted");
       }
-    } else {
-      throw new Error("Event not found");
     }
   } catch (error) {
     console.error("Error getting event", error);

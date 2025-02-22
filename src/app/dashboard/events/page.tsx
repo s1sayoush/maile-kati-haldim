@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   Card,
   CardContent,
@@ -21,7 +21,12 @@ import { useUser } from "@/providers/UserContext";
 import { Event } from "@/types/types";
 import { pushEvent } from "@/firebase/event";
 import { nanoid } from "nanoid";
-import { useRouter } from "next/navigation";
+import {
+  useParams,
+  usePathname,
+  useRouter,
+  useSearchParams,
+} from "next/navigation";
 
 const STEPS = [
   {
@@ -47,27 +52,50 @@ const STEPS = [
 ] as const;
 
 export default function ExpenseSplitterPage() {
-  const { currentStep, nextStep, previousStep, resetStore } = useEventStore();
+  const params = useParams();
+  const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const { currentStep, nextStep, previousStep, resetStore, initializeStore } =
+    useEventStore();
   const currentState = useEventStore.getState();
   const CurrentStepComponent = STEPS[currentStep].component;
-  const router = useRouter();
+
+  const { userDetails, loading: userLoading } = useUser();
+  const [uid, setUid] = useState<string>("");
+  const [eventId, setEventId] = useState<string>("");
+
+  const queryEventId = searchParams.get("eventId");
+  const isEditMode =
+    searchParams.get("edit") === "true" && Boolean(queryEventId);
+
   const event = {
     ...currentState.currentEvent,
   };
-  const { userDetails } = useUser();
-  const { uid } = userDetails;
+
+  useEffect(() => {
+    const id = queryEventId || params.id || nanoid();
+    setEventId(id as string);
+  }, [queryEventId, params.id]);
+
+  useEffect(() => {
+    if (userDetails && eventId) {
+      setUid(userDetails.uid);
+      initializeStore(eventId, isEditMode);
+    }
+  }, [userDetails, eventId, initializeStore, isEditMode]);
+
   const [finishing, setFinishing] = useState(false);
 
-  console.log("currentState", JSON.stringify(currentState, null, 2));
   const handleNext = async () => {
-    const id = nanoid();
     if (currentStep == STEPS.length - 1) {
       setFinishing(true);
-      await pushEvent(uid, event, id);
+      await pushEvent(uid, event);
       resetStore();
       setFinishing(false);
       router.refresh();
-      router.push(`./reports/${id}`);
+      router.push(`./reports/${event.id}`);
     }
     nextStep();
   };

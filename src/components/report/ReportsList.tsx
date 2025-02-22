@@ -106,7 +106,7 @@ const EventList = () => {
   });
 
   const handleEdit = (eventId: string) => {
-    router.push(`./events/edit/${eventId}`);
+    router.push(`dashboard/events?eventId=${eventId}&edit=true`);
   };
 
   const handleDelete = async (event: Event) => {

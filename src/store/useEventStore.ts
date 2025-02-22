@@ -12,11 +12,16 @@ import {
   Report,
   Deductible,
 } from "@/types/types";
+import { getEvent } from "@/firebase/event";
 
 interface EventStore {
   currentEvent: Event;
   currentStep: number;
+  isLoading: boolean;
+  isEditMode: boolean;
+  error: string | null;
 
+  initializeStore: (id: string, isEditMode: boolean) => void;
   setEventDetails: (details: EventDetails) => void;
   addParticipant: (person: Person) => void;
   removeParticipant: (id: string) => void;
@@ -49,6 +54,7 @@ const initialReport: Report = {
 };
 
 const initialEvent: Event = {
+  id: "",
   details: {
     eventTitle: "",
     location: "",
@@ -63,6 +69,9 @@ const initialEvent: Event = {
 export const useEventStore = create<EventStore>((set, get) => ({
   currentEvent: initialEvent,
   currentStep: 0,
+  isEditMode: false,
+  isLoading: false,
+  error: null,
 
   setEventDetails: (details) =>
     set((state) => ({
@@ -71,6 +80,33 @@ export const useEventStore = create<EventStore>((set, get) => ({
         details,
       },
     })),
+
+  initializeStore: async (id: string, isEditMode: boolean) => {
+    set({ isLoading: true, error: null });
+    try {
+      if (isEditMode) {
+        const existingEvent = await getEvent(id);
+        console.log("existingEvent", existingEvent);
+        set({
+          currentEvent: existingEvent,
+          isEditMode: true,
+          isLoading: false,
+        });
+      } else {
+        set({
+          currentEvent: {
+            ...initialEvent,
+            id: id,
+          },
+          isEditMode: false,
+          isLoading: false,
+        });
+      }
+    } catch (error) {
+      console.error("Error initializing store:", error);
+      set({ error: "Error initializing store", isLoading: false });
+    }
+  },
 
   addParticipant: (person) =>
     set((state) => ({
@@ -247,5 +283,5 @@ export const useEventStore = create<EventStore>((set, get) => ({
   previousStep: () => set((state) => ({ currentStep: state.currentStep - 1 })),
   setStep: (step) => set({ currentStep: step }),
 
-  resetStore: () => set({ currentEvent: initialEvent, currentStep: -1 }),
+  resetStore: () => set({ currentEvent: { ...initialEvent }, currentStep: -1 }),
 }));
