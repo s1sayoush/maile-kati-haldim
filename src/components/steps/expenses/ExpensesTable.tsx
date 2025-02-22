@@ -23,7 +23,7 @@ import { Card, CardContent } from "@/components/ui/card";
 interface ExpensesViewProps {
   items: BillItem[];
   onEdit: (item: BillItem) => void;
-  onDelete: (id: string) => void;
+  handleDelete: (item: BillItem) => void;
 }
 
 // Shared formatting functions
@@ -117,7 +117,7 @@ const useFormatters = () => {
 };
 
 // Desktop Table Component
-const DesktopView = ({ items, onEdit, onDelete }: ExpensesViewProps) => {
+const DesktopView = ({ items, onEdit, handleDelete }: ExpensesViewProps) => {
   const { formatPayments, formatLiablePersons } = useFormatters();
 
   return (
@@ -159,7 +159,7 @@ const DesktopView = ({ items, onEdit, onDelete }: ExpensesViewProps) => {
                   <Button
                     size="icon"
                     variant="ghost"
-                    onClick={() => onDelete(item.id)}
+                    onClick={() => handleDelete(item)}
                     className="text-destructive"
                   >
                     <Trash className="h-4 w-4" />
@@ -184,7 +184,7 @@ const DesktopView = ({ items, onEdit, onDelete }: ExpensesViewProps) => {
 };
 
 // Mobile Card Component
-const MobileView = ({ items, onEdit, onDelete }: ExpensesViewProps) => {
+const MobileView = ({ items, onEdit, handleDelete }: ExpensesViewProps) => {
   const { formatPayments, formatLiablePersons } = useFormatters();
 
   return (
@@ -221,8 +221,8 @@ const MobileView = ({ items, onEdit, onDelete }: ExpensesViewProps) => {
                     <Button
                       size="icon"
                       variant="ghost"
-                      onClick={() => onDelete(item.id)}
-                      className="text-destructive"
+                      onClick={() => handleDelete(item)}
+                      className="text-destructive "
                     >
                       <Trash className="h-4 w-4" />
                     </Button>
@@ -262,11 +262,11 @@ const MobileView = ({ items, onEdit, onDelete }: ExpensesViewProps) => {
 };
 
 // Main Component
-const ExpensesTable = ({ items, onEdit, onDelete }: ExpensesViewProps) => {
+const ExpensesTable = ({ items, onEdit, handleDelete }: ExpensesViewProps) => {
   return (
     <>
-      <DesktopView items={items} onEdit={onEdit} onDelete={onDelete} />
-      <MobileView items={items} onEdit={onEdit} onDelete={onDelete} />
+      <DesktopView items={items} onEdit={onEdit} handleDelete={handleDelete} />
+      <MobileView items={items} onEdit={onEdit} handleDelete={handleDelete} />
     </>
   );
 };

@@ -1,10 +1,20 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { useEventStore } from "@/store/useEventStore";
 import { Button } from "@/components/ui/button";
 import { Receipt } from "lucide-react";
 import { BillItem } from "@/types/types";
 import ExpensesTable from "./expenses/ExpensesTable";
 import ExpenseDialog from "./expenses/ExpenseDialog";
+import { Alert } from "../ui/alert";
+import {
+  AlertDialog,
+  AlertDialogDescription,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogHeader,
+  AlertDialogContent,
+  AlertDialogFooter,
+} from "@/components/ui/alert-dialog";
 
 const ExpensesStep = () => {
   const {
@@ -14,8 +24,18 @@ const ExpensesStep = () => {
     removeBillItem,
     updateReport,
   } = useEventStore();
+
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<BillItem | null>(null);
+
+  // State for the delete confirmation dialog
+  const [deleteDialog, setDeleteDialog] = useState<{
+    isOpen: boolean;
+    item: BillItem | null;
+  }>({
+    isOpen: false,
+    item: null,
+  });
 
   const handleAddOrUpdateItem = (formData: Omit<BillItem, "id">) => {
     if (editingItem) {
@@ -27,6 +47,25 @@ const ExpensesStep = () => {
     setEditingItem(null);
     console.log("trying to update report");
     updateReport();
+  };
+
+  // Handle item deletion
+  const handleDelete = (item: BillItem) => {
+    setDeleteDialog({
+      isOpen: true,
+      item, // Store the item to be deleted
+    });
+  };
+
+  // Confirm deletion
+  const confirmDelete = () => {
+    if (deleteDialog.item) {
+      removeBillItem(deleteDialog.item.id); // Pass the correct item ID to remove
+    }
+    setDeleteDialog({
+      isOpen: false,
+      item: null, // Reset the state after deletion
+    });
   };
 
   return (
@@ -55,7 +94,7 @@ const ExpensesStep = () => {
           setEditingItem(item);
           setIsDialogOpen(true);
         }}
-        onDelete={removeBillItem}
+        handleDelete={handleDelete} // Pass delete handler
       />
 
       <ExpenseDialog
@@ -67,6 +106,38 @@ const ExpensesStep = () => {
         onSubmit={handleAddOrUpdateItem}
         editingItem={editingItem!}
       />
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog
+        open={deleteDialog.isOpen}
+        onOpenChange={(isOpen) =>
+          setDeleteDialog((prev) => ({ ...prev, isOpen }))
+        }
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <h3>Are you sure you want to remove this item?</h3>
+          </AlertDialogHeader>
+          <AlertDialogDescription>
+            This action cannot be undone. You are about to delete the item:{" "}
+            <strong>{deleteDialog.item?.itemName}</strong>
+          </AlertDialogDescription>
+
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              onClick={() => setDeleteDialog({ isOpen: false, item: null })}
+            >
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="bg-red-500 hover:bg-red-600"
+            >
+              Remove
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

@@ -59,8 +59,9 @@ export default function ExpenseSplitterPage() {
   const handleNext = async () => {
     const id = nanoid();
     if (currentStep == STEPS.length - 1) {
-      await pushEvent(event, id);
+      // await pushEvent(event, id);
       resetStore();
+      router.refresh();
       router.push(`./reports/${id}`);
     }
     nextStep();
@@ -77,7 +78,7 @@ export default function ExpenseSplitterPage() {
         <div className="relative flex justify-between items-center px-6 md:px-12 pb-6">
           {STEPS.map((step, index) => {
             const isActive = index === currentStep;
-            const isCompleted = index < currentStep;
+            const isCompleted = index <= currentStep;
             return (
               <div
                 key={step.id}

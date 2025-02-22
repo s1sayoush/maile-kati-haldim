@@ -77,9 +77,9 @@ const DesktopView = ({
                   size="icon"
                   variant="ghost"
                   onClick={() => handleDelete(participant)}
-                  className="hover:bg-red-100"
+                  className="text-destructive  hover:bg-accent"
                 >
-                  <Trash className="h-4 w-4 text-red-500" />
+                  <Trash className="h-4 w-4 " />
                 </Button>
               </TableCell>
             </TableRow>
@@ -141,9 +141,9 @@ const MobileView = ({
                   size="icon"
                   variant="ghost"
                   onClick={() => handleDelete(participant)}
-                  className="hover:bg-red-100"
+                  className="hover:bg-accent"
                 >
-                  <Trash className="h-4 w-4 text-red-500" />
+                  <Trash className="text-destructive" />
                 </Button>
               </div>
             </div>

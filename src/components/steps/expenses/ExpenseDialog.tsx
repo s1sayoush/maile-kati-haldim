@@ -1,10 +1,11 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -66,16 +67,48 @@ const ExpenseDialog: React.FC<ExpenseDialogProps> = ({
   onSubmit,
   editingItem,
 }) => {
+  console.log(
+    "editingItem in dialogue",
+    JSON.stringify(editingItem?.itemName, null, 2)
+  );
   const { currentEvent } = useEventStore();
-  const [formData, setFormData] = React.useState<FormData>({
-    itemName: editingItem?.itemName || "",
-    amount: editingItem?.amount?.toString() || "",
-    category: editingItem?.category || BillCategory.FOOD,
-    paymentMethod: editingItem?.paymentMethod || PaymentMethod.SINGLE,
-    payments: editingItem?.payments || [],
-    liablePersons: editingItem?.liablePersons || [],
-    selectedPayer: editingItem?.payments?.[0]?.personId || "",
+
+  const [formData, setFormData] = useState<FormData>({
+    itemName: "",
+    amount: "",
+    category: BillCategory.FOOD,
+    paymentMethod: PaymentMethod.SINGLE,
+    payments: [],
+    liablePersons: [],
+    selectedPayer: "",
   });
+
+  // Update formData when editingItem changes
+  useEffect(() => {
+    if (editingItem) {
+      setFormData({
+        itemName: editingItem.itemName || "",
+        amount: editingItem.amount?.toString() || "",
+        category: editingItem.category || BillCategory.FOOD,
+        paymentMethod: editingItem.paymentMethod || PaymentMethod.SINGLE,
+        payments: editingItem.payments || [],
+        liablePersons: editingItem.liablePersons || [],
+        selectedPayer: editingItem.payments?.[0]?.personId || "",
+      });
+    } else {
+      // Reset to initial state when no editingItem
+      setFormData({
+        itemName: "",
+        amount: "",
+        category: BillCategory.FOOD,
+        paymentMethod: PaymentMethod.SINGLE,
+        payments: [],
+        liablePersons: [],
+        selectedPayer: "",
+      });
+    }
+  }, [editingItem]); // Runs whenever editingItem changes
+
   const [formError, setFormError] = useState<string | null>(null);
 
   // Helper functions
@@ -259,6 +292,9 @@ const ExpenseDialog: React.FC<ExpenseDialogProps> = ({
         <DialogHeader>
           <DialogTitle>{editingItem ? "Edit" : "Add"} Expense</DialogTitle>
         </DialogHeader>
+        <DialogDescription>
+          Provide details about the expense below
+        </DialogDescription>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-2 gap-4">
