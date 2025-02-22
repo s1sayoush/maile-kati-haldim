@@ -24,13 +24,8 @@ const items = [
   },
   {
     title: "Naya Hisab",
-    url: "/dashboard/naya",
+    url: "/dashboard/new",
     icon: Calculator,
-  },
-  {
-    title: "Purano kharcha",
-    url: "/dashboard/purano",
-    icon: ScrollText,
   },
   {
     title: "Support",
@@ -63,11 +58,11 @@ export function AppTabs() {
 
   return (
     isMobile && (
-      <div className="fixed bottom-0  left-0 right-0   border-0">
-        <Tabs value={activeItem} className="w-full ">
+      <div className="fixed -bottom-2   left-0 right-0   border-0">
+        <Tabs value={activeItem} className="w-full !rounded-none">
           <TabsList
-            className={`grid w-full grid-cols-4 border-t ${
-              Capacitor.getPlatform() === "android" ? "h-28 pb-10" : "h-24 pb-4"
+            className={`grid w-full grid-cols-3 border-t !rounded-none ${
+              Capacitor.getPlatform() === "android" ? "h-28 pb-10" : "h-20 pb-2"
             }`}
           >
             {items.map((item) => (

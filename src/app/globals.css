@@ -12,7 +12,9 @@ body {
   }
 }
 
-/* @layer base {
+
+
+ @layer base {
   :root {
     --background: 0 0% 100%;
     --foreground: 240 10% 3.9%;
@@ -84,9 +86,11 @@ body {
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
 }
- */
+ 
 
- @layer base {
+
+
+ /* @layer base {
   :root {
     --background: 210 20% 98%;
     --foreground: 220 15% 15%;
@@ -158,11 +162,11 @@ body {
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
 }
+ */
 
 
 
-
-
+/* 
 
  @layer base {
   * {
@@ -173,7 +177,7 @@ body {
   }
 }
 
-
+ */
 
 
 

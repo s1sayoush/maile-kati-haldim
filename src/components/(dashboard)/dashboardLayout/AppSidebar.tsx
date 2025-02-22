@@ -46,11 +46,7 @@ const items = [
     url: "/dashboard/new",
     icon: Calculator,
   },
-  {
-    title: "Purano kharcha",
-    url: "/dashboard/reports",
-    icon: ScrollText,
-  },
+
   {
     title: "Support",
     url: "/dashboard/support",
@@ -194,29 +190,27 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter
-        className={`border-t border-border 
-        ${Capacitor.getPlatform() === "android" ? "pb-14" : "pb-6"}
-      `}
+        className={`border-t border-border
+        ${Capacitor.getPlatform() === "android" ? "pb-14" : "pb-6"}`}
       >
         <div className="flex flex-col gap-3 p-1">
           <div className="flex items-center justify-between gap-3 overflow-hidden">
-            <Link
-              href="/dashboard/profile"
-              onClick={() => isMobile && toggleSidebar()}
-            >
-              <div className="flex items-center justify-center rounded-lg p-2 hover:bg-accent transition-all duration-200 ease-in-out">
-                <Avatar className="h-8 w-8">
-                  <AvatarImage
-                    src={avatar}
-                    alt={fullName}
-                    className="object-cover"
-                  />
-                  <AvatarFallback className="bg-primary/10 text-primary">
-                    {initials}
-                  </AvatarFallback>
-                </Avatar>
-
-                {!isCollapsed && (
+            {!isCollapsed ? (
+              <Link
+                href="/dashboard/profile"
+                onClick={() => isMobile && toggleSidebar()}
+              >
+                <div className="flex items-center justify-center rounded-lg hover:bg-accent transition-all duration-200 ease-in-out">
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage
+                      src={avatar}
+                      alt={fullName}
+                      className="object-cover"
+                    />
+                    <AvatarFallback className="bg-primary/10 text-primary">
+                      {initials}
+                    </AvatarFallback>
+                  </Avatar>
                   <div className="flex flex-col min-w-0 flex-1 ml-3">
                     <p className="text-sm font-medium leading-none truncate text-foreground">
                       {fullName}
@@ -225,12 +219,15 @@ export function AppSidebar() {
                       {truncateEmail(email as string)}
                     </p>
                   </div>
-                )}
+                </div>
+              </Link>
+            ) : (
+              <div className="flex items-center justify-center rounded-lg hover:bg-accent transition-all duration-200 ease-in-out">
+                <ThemeToggle />
               </div>
-            </Link>
-            <ThemeToggle />
+            )}
+            {!isCollapsed && <ThemeToggle />}
           </div>
-
           <div className="flex justify-center">
             <LogoutDialog onLogout={handleLogout} isCollapsed={isCollapsed} />
           </div>

@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { getAllEvent } from "@/firebase/event";
+import { Event } from "@/types/types";
 
 const OldReports = () => {
   const [events, setEvents] = useState<Event[]>([]);
@@ -56,7 +57,7 @@ const OldReports = () => {
             events.map((event, index) => (
               <TableRow key={index}>
                 <TableCell>{event.id || "Unnamed Event"}</TableCell>
-                <TableCell>{event.details?.date || "N/A"}</TableCell>
+                <TableCell>{(event.details?.date as any) || "N/A"}</TableCell>
                 <TableCell>
                   ${event.report?.totalAmount?.toFixed(2) || "0.00"}
                 </TableCell>
