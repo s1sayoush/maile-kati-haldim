@@ -13,7 +13,8 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { loginPlayers, signInWithPopupProvider } from "@/firebase/auth";
+import { loginUser, signInWithPopupProvider } from "@/firebase/auth";
+import { useUser } from "@/providers/UserContext";
 
 const LoginPage = () => {
   const router = useRouter();
@@ -22,13 +23,14 @@ const LoginPage = () => {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false); // State for password visibility
+  const { refreshUserDetails } = useUser();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError("");
 
-    const result = await loginPlayers(email, password);
+    const result = await loginUser(email, password);
 
     if (result.success) {
       router.push("/dashboard");
@@ -45,6 +47,7 @@ const LoginPage = () => {
     const result = await signInWithPopupProvider("google");
 
     if (result.success) {
+      await refreshUserDetails();
       router.push("/dashboard");
     } else {
       setError(result.error || "An error occurred during Google sign-in");

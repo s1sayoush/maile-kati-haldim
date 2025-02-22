@@ -19,8 +19,7 @@ const geistMono = localFont({
 
 export const metadata: Metadata = {
   title: "Maile Kati Haldim",
-  description:
-    "Maile Kati Haldim , kidsCoding, Players, dashboard , programming",
+  description: "Maile Kati Haldim , kidsCoding, User, dashboard , programming",
 };
 
 export default function RootLayout({

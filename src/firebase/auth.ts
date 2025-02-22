@@ -11,18 +11,18 @@ import {
 import { auth, firestore } from "./config";
 import { doc, getDoc, setDoc, Timestamp, updateDoc } from "firebase/firestore";
 
-export const loginPlayers = async (email: string, password: string) => {
+export const loginUser = async (email: string, password: string) => {
   try {
     const result = await signInWithEmailAndPassword(auth, email, password);
     const user = result.user;
-    const userDoc = doc(firestore, "players", user.uid);
+    const userDoc = doc(firestore, "users", user.uid);
     const userSnap = await getDoc(userDoc);
 
     if (userSnap.exists()) {
       return { success: true, user };
     } else {
       await signOut(auth);
-      return { success: false, error: "This User is not a Players" };
+      return { success: false, error: "This User is not a User" };
     }
   } catch (error) {
     if (error instanceof Error) {
@@ -32,7 +32,7 @@ export const loginPlayers = async (email: string, password: string) => {
   }
 };
 
-export const createPlayersAccount = async (
+export const createUserAccount = async (
   email: string,
   password: string,
   displayName?: string
@@ -41,7 +41,7 @@ export const createPlayersAccount = async (
     const result = await createUserWithEmailAndPassword(auth, email, password);
     const user = result.user;
 
-    const userDocRef = doc(firestore, "players", user.uid);
+    const userDocRef = doc(firestore, "users", user.uid);
 
     try {
       await setDoc(userDocRef, {
@@ -86,7 +86,7 @@ export const signInWithPopupProvider = async (provider: string) => {
     const result = await signInWithPopup(auth, providerInstance);
     const user = result.user;
 
-    const userDocRef = doc(firestore, "players", user.uid);
+    const userDocRef = doc(firestore, "users", user.uid);
     const userDocSnap = await getDoc(userDocRef);
 
     if (!userDocSnap.exists()) {
@@ -138,7 +138,7 @@ export const deleteUser = async (
     }
 
     await user.delete();
-    await updateDoc(doc(firestore, "players", uid), {
+    await updateDoc(doc(firestore, "users", uid), {
       deletedAt: Timestamp.now(),
     });
 

@@ -22,7 +22,7 @@ export const saveUserDetails = async (
   userDetails: UserDetails
 ): Promise<void> => {
   try {
-    const userRef = doc(firestore, "players", uid);
+    const userRef = doc(firestore, "users", uid);
     await setDoc(userRef, userDetails, { merge: true });
     await setDoc(userRef, { profileCompleted: true }, { merge: true });
   } catch (error) {
@@ -33,7 +33,7 @@ export const saveUserDetails = async (
 
 export const getUserDetails = async (
   uid: string,
-  collection: string = "players"
+  collection: string = "users"
 ): Promise<UserDetails | null> => {
   try {
     const docRef = doc(firestore, collection, uid);
@@ -79,7 +79,7 @@ export default deleteUsersExcept;
 
 // export const addTestPayments = async (uid: string, data: any) => {
 //   try {
-//     const userRef = doc(firestore, "players", uid);
+//     const userRef = doc(firestore, "users", uid);
 //     await setDoc(userRef, { payments: data }, { merge: true });
 //     console.log("added succesfully");
 //   } catch (error) {
