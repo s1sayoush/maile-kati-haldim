@@ -42,8 +42,9 @@ export interface BillItem {
 }
 
 export interface Deductible {
-  amount: number;
+  amount?: number;
   reason: string;
+  isApplied: boolean;
 }
 
 export interface Event {
@@ -51,7 +52,6 @@ export interface Event {
   id?: string;
   details: EventDetails;
   participants: Person[];
-
   items: BillItem[];
   report: Report;
 }
@@ -64,6 +64,19 @@ export interface Report {
   finalTotal?: number;
   finalOwedByPerson?: { [personId: string]: number };
   netBalances?: { [personId: string]: number };
+  settlementPlan?: SettlementPlan;
+}
+
+export interface SettlementTransaction {
+  from: string; // Person ID who needs to pay
+  to: string; // Person ID who needs to receive
+  amount: number; // Amount to be transferred
+}
+
+export interface SettlementPlan {
+  transactions: SettlementTransaction[];
+  totalTransactions: number;
+  isSettled: boolean; // Indicates if all debts are settled
 }
 
 export type Step = {

@@ -8,6 +8,7 @@ import { StepperHeader } from "@/components/steps/StepperHeader";
 
 import { EventInitializer } from "@/components/steps/EventInitializer";
 import { StepperContent, STEPS } from "@/components/steps/StepperContent";
+import Loader from "@/components/ui/Loader";
 
 export default function ExpenseSplitterPage() {
   const { userDetails, loading: userLoading } = useUser();
@@ -25,7 +26,7 @@ export default function ExpenseSplitterPage() {
   );
 
   if (userLoading) {
-    return <div>Loading...</div>;
+    return <Loader />;
   }
 
   return (

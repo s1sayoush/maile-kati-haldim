@@ -11,6 +11,7 @@ import {
   PaymentMethod,
   Report,
   Deductible,
+  SettlementTransaction,
 } from "@/types/types";
 import { getEvent } from "@/firebase/event";
 
@@ -21,7 +22,7 @@ interface EventStore {
   isEditMode: boolean;
   error: string | null;
 
-  initializeStore: (id: string, isEditMode: boolean) => void;
+  initializeStore: (id?: string, isEditMode?: boolean) => void;
   setEventDetails: (details: EventDetails) => void;
   addParticipant: (person: Person) => void;
   removeParticipant: (id: string) => void;
@@ -32,8 +33,9 @@ interface EventStore {
   removeBillItem: (id: string) => void;
   calculateTotalPaid: (personId: string) => number;
   calculateTotalOwed: (personId: string) => number;
-  deduct: (amount: number, reason: string) => void;
-  updateReport: () => void;
+  deduct: (deductible: Deductible) => void;
+  calculateReport: () => void;
+  calculateSettlementPlan: () => void;
   nextStep: () => void;
   previousStep: () => void;
   setStep: (step: number) => void;
@@ -43,8 +45,8 @@ interface EventStore {
 const initialReport: Report = {
   totalAmount: 0,
   deductible: {
-    amount: 0,
     reason: "",
+    isApplied: false,
   },
   paidByPerson: {},
   owedByPerson: {},
@@ -54,7 +56,7 @@ const initialReport: Report = {
 };
 
 const initialEvent: Event = {
-  id: "",
+  id: nanoid(),
   details: {
     eventTitle: "",
     location: "",
@@ -81,11 +83,11 @@ export const useEventStore = create<EventStore>((set, get) => ({
       },
     })),
 
-  initializeStore: async (id: string, isEditMode: boolean) => {
+  initializeStore: async (id?: string, isEditMode?: boolean) => {
     set({ isLoading: true, error: null });
     try {
       if (isEditMode) {
-        const existingEvent = await getEvent(id);
+        const existingEvent = await getEvent(id as string);
         console.log("existingEvent", existingEvent);
         set({
           currentEvent: existingEvent,
@@ -94,10 +96,6 @@ export const useEventStore = create<EventStore>((set, get) => ({
         });
       } else {
         set({
-          currentEvent: {
-            ...initialEvent,
-            id: id,
-          },
           isEditMode: false,
           isLoading: false,
         });
@@ -209,21 +207,20 @@ export const useEventStore = create<EventStore>((set, get) => ({
     }, 0);
   },
 
-  deduct: (amount, reason) =>
+  deduct: (deductible: Deductible) =>
     set((state) => ({
       currentEvent: {
         ...state.currentEvent,
         report: {
           ...state.currentEvent.report,
           deductible: {
-            amount,
-            reason,
+            ...deductible,
           },
         },
       },
     })),
 
-  updateReport: () => {
+  calculateReport: () => {
     const state = get();
     const participants = state.currentEvent.participants;
     const items = state.currentEvent.items;
@@ -245,11 +242,13 @@ export const useEventStore = create<EventStore>((set, get) => ({
 
     // Calculate final total (after deductible)
     const finalTotal =
-      totalAmount - state.currentEvent.report.deductible.amount;
+      totalAmount - state.currentEvent.report.deductible.amount!;
+
+    // Calculate deductible per person
+    const deductiblePerPerson =
+      state.currentEvent.report.deductible.amount! / participants.length;
 
     // Calculate final owed amounts per person (after deductible)
-    const deductiblePerPerson =
-      state.currentEvent.report.deductible.amount / participants.length;
     const finalOwedByPerson: { [personId: string]: number } = {};
     participants.forEach((person) => {
       finalOwedByPerson[person.id] =
@@ -258,9 +257,25 @@ export const useEventStore = create<EventStore>((set, get) => ({
 
     // Calculate net balances (what each person needs to pay or receive)
     const netBalances: { [personId: string]: number } = {};
+
+    // Adjust paid amounts proportionally for deductible
+    const totalPaid = Object.values(paidByPerson).reduce(
+      (sum, amount) => sum + amount,
+      0
+    );
     participants.forEach((person) => {
+      // Calculate how much of the deductible this person should get back based on their contribution
+      const deductibleShare =
+        totalPaid > 0
+          ? (paidByPerson[person.id] / totalPaid) *
+            state.currentEvent.report.deductible.amount!
+          : 0;
+
+      // Net balance is: (what they paid - their share of deductible) - what they owe
       netBalances[person.id] =
-        paidByPerson[person.id] - finalOwedByPerson[person.id];
+        paidByPerson[person.id] -
+        deductibleShare -
+        finalOwedByPerson[person.id];
     });
 
     set((state) => ({
@@ -274,6 +289,79 @@ export const useEventStore = create<EventStore>((set, get) => ({
           finalTotal,
           finalOwedByPerson,
           netBalances,
+        },
+      },
+    }));
+  },
+  calculateSettlementPlan: () => {
+    const state = get();
+    const netBalances = state.currentEvent.report.netBalances;
+
+    // Separate participants into creditors and debtors.
+    const creditors: { id: string; amount: number }[] = [];
+    const debtors: { id: string; amount: number }[] = [];
+
+    Object.entries(netBalances!).forEach(([personId, balance]) => {
+      // Allow a small threshold to avoid rounding issues.
+      if (balance > 0.01) {
+        creditors.push({ id: personId, amount: balance });
+      } else if (balance < -0.01) {
+        // Store the debt as a positive number.
+        debtors.push({ id: personId, amount: -balance });
+      }
+    });
+
+    // Sort both arrays (largest amounts first)
+    creditors.sort((a, b) => b.amount - a.amount);
+    debtors.sort((a, b) => b.amount - a.amount);
+
+    const transactions: SettlementTransaction[] = [];
+    let creditorIndex = 0;
+    let debtorIndex = 0;
+
+    // Greedy settlement: match the largest debtor with the largest creditor.
+    while (creditorIndex < creditors.length && debtorIndex < debtors.length) {
+      const creditor = creditors[creditorIndex];
+      const debtor = debtors[debtorIndex];
+
+      // Determine the settlement amount as the smaller of the two amounts.
+      const settleAmount = Math.min(creditor.amount, debtor.amount);
+
+      transactions.push({
+        from: debtor.id,
+        to: creditor.id,
+        amount: Number(settleAmount.toFixed(2)),
+      });
+
+      // Adjust the amounts after settlement.
+      creditor.amount -= settleAmount;
+      debtor.amount -= settleAmount;
+
+      // Move to the next creditor if this one is fully settled.
+      if (Math.abs(creditor.amount) < 0.01) {
+        creditorIndex++;
+      }
+      // Similarly, move to the next debtor.
+      if (Math.abs(debtor.amount) < 0.01) {
+        debtorIndex++;
+      }
+    }
+
+    // Update the state with the settlement plan.
+    set((state) => ({
+      currentEvent: {
+        ...state.currentEvent,
+        report: {
+          ...state.currentEvent.report,
+          settlementPlan: {
+            transactions,
+            totalTransactions: transactions.length,
+            // A quick check: if the sum of net balances is near zero, we're settled.
+            isSettled:
+              Math.abs(
+                Object.values(netBalances!).reduce((sum, val) => sum + val, 0)
+              ) < 0.01,
+          },
         },
       },
     }));

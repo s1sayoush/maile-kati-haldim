@@ -15,7 +15,7 @@ export function EventInitializer({ onInitialize }: EventInitializerProps) {
     searchParams.get("edit") === "true" && Boolean(queryEventId);
 
   useEffect(() => {
-    const id = queryEventId || params.id || nanoid();
+    const id = queryEventId || params.id;
     onInitialize(id as string, isEditMode);
   }, [queryEventId, params.id, isEditMode, onInitialize]);
 

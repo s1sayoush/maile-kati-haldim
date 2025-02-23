@@ -13,38 +13,120 @@ import {
 } from "@/components/ui/table";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
+import { useToast } from "@/hooks/use-toast";
 
 const ReviewStep = () => {
-  const { currentEvent, updateReport, personIdtoName } = useEventStore();
-  const [hasDeductible, setHasDeductible] = useState("no");
-  const [deductibleAmount, setDeductibleAmount] = useState("");
-  const [deductibleReason, setDeductibleReason] = useState("");
+  const { currentEvent, deduct, calculateReport, calculateSettlementPlan } =
+    useEventStore();
+  const { toast } = useToast();
 
+  // Initialize states based on current deductible
+  const [hasDeductible, setHasDeductible] = useState(
+    currentEvent.report.deductible.isApplied ? "yes" : "no"
+  );
+  const [deductibleAmount, setDeductibleAmount] = useState(
+    currentEvent.report.deductible.amount?.toString() || ""
+  );
+  const [deductibleReason, setDeductibleReason] = useState(
+    currentEvent.report.deductible.reason || ""
+  );
+
+  // Update local state when event changes
   useEffect(() => {
-    updateReport();
-  }, [updateReport]);
+    setHasDeductible(currentEvent.report.deductible.isApplied ? "yes" : "no");
+    setDeductibleAmount(
+      currentEvent.report.deductible.amount?.toString() || ""
+    );
+    setDeductibleReason(currentEvent.report.deductible.reason || "");
+  }, [currentEvent.report.deductible]);
 
   const totalAmount = currentEvent.items.reduce(
     (sum, item) => sum + item.amount,
     0
   );
 
-  const handleDeductibleSubmit = () => {
-    if (hasDeductible === "yes" && deductibleAmount && deductibleReason) {
-      const amount = parseFloat(deductibleAmount);
-      if (!isNaN(amount)) {
-        currentEvent.report.deductible = {
-          amount,
-          reason: deductibleReason,
-        };
-      }
-    } else {
-      currentEvent.report.deductible = {
+  const validateDeductible = (amount: number, reason: string): boolean => {
+    if (!amount || !reason) {
+      toast({
+        title: "Error",
+        description: "Please fill in both amount and reason",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    if (isNaN(amount)) {
+      toast({
+        title: "Error",
+        description: "Please enter a valid amount",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    if (amount <= 0) {
+      toast({
+        title: "Error",
+        description: "Amount must be greater than 0",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    if (amount >= totalAmount) {
+      toast({
+        title: "Error",
+        description:
+          "Deductible cannot be greater than or equal to total amount",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleDeductibleChange = (value: "yes" | "no") => {
+    setHasDeductible(value);
+    if (value === "no") {
+      deduct({
         amount: 0,
         reason: "",
-      };
+        isApplied: false,
+      });
+      calculateReport();
+      calculateSettlementPlan();
+      toast({
+        title: "Deductions removed",
+        variant: "default",
+      });
     }
-    updateReport();
+  };
+
+  const handleDeductibleSubmit = () => {
+    if (hasDeductible === "yes") {
+      const amount = parseFloat(deductibleAmount);
+
+      if (!validateDeductible(amount, deductibleReason)) {
+        return;
+      }
+
+      deduct({
+        amount,
+        reason: deductibleReason,
+        isApplied: true,
+      });
+
+      calculateReport();
+      calculateSettlementPlan();
+
+      toast({
+        title: currentEvent.report.deductible.isApplied
+          ? "Deductible updated successfully"
+          : "Deductible applied successfully",
+        variant: "default",
+      });
+    }
   };
 
   return (
@@ -57,7 +139,7 @@ const ReviewStep = () => {
           <div className="space-y-4">
             <RadioGroup
               value={hasDeductible}
-              onValueChange={setHasDeductible}
+              onValueChange={handleDeductibleChange}
               className="space-y-2"
             >
               <div className="flex items-center space-x-2">
@@ -92,8 +174,10 @@ const ReviewStep = () => {
                     placeholder="Enter reason (e.g., prize money, discount)"
                   />
                 </div>
-                <Button onClick={handleDeductibleSubmit}>
-                  Apply Deductible
+                <Button onClick={handleDeductibleSubmit} variant="default">
+                  {currentEvent.report.deductible.isApplied
+                    ? "Update Deductible"
+                    : "Apply Deductible"}
                 </Button>
               </div>
             )}
@@ -129,25 +213,25 @@ const ReviewStep = () => {
                 <TableCell className="text-right">
                   Rs.{totalAmount.toFixed(2)}
                 </TableCell>
-                <TableCell></TableCell>
               </TableRow>
-              {currentEvent.report.deductible.amount > 0 && (
+              {currentEvent.report.deductible.isApplied && (
                 <>
                   <TableRow className="text-muted-foreground">
                     <TableCell colSpan={2}>
                       Deductible ({currentEvent.report.deductible.reason})
                     </TableCell>
                     <TableCell className="text-right">
-                      -Rs.{currentEvent.report.deductible.amount.toFixed(2)}
+                      -Rs.{currentEvent.report.deductible?.amount?.toFixed(2)}
                     </TableCell>
-                    <TableCell></TableCell>
                   </TableRow>
                   <TableRow className="font-medium">
                     <TableCell colSpan={2}>Final Total</TableCell>
                     <TableCell className="text-right">
-                      Rs.{currentEvent.report.finalTotal?.toFixed(2)}
+                      Rs.
+                      {(
+                        totalAmount - currentEvent.report.deductible.amount!
+                      ).toFixed(2)}
                     </TableCell>
-                    <TableCell></TableCell>
                   </TableRow>
                 </>
               )}
@@ -186,7 +270,7 @@ const ReviewStep = () => {
                     ]?.toFixed(2) || "0.00"}
                   </TableCell>
                   <TableCell
-                    className={`text-right Rs.{
+                    className={`text-right ${
                       (currentEvent.report.netBalances?.[person.id] || 0) >= 0
                         ? "text-green-600"
                         : "text-red-600"

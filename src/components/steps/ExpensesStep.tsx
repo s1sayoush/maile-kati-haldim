@@ -22,7 +22,7 @@ const ExpensesStep = () => {
     addBillItem,
     updateBillItem,
     removeBillItem,
-    updateReport,
+    calculateReport,
   } = useEventStore();
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -46,7 +46,7 @@ const ExpensesStep = () => {
     setIsDialogOpen(false);
     setEditingItem(null);
     console.log("trying to update report");
-    updateReport();
+    calculateReport();
   };
 
   // Handle item deletion

@@ -46,6 +46,10 @@ const ExpenseAnalysisDashboard = ({ data }: { data: Event }) => {
     }
   };
 
+  const hasDiscount = report.finalTotal !== report.totalAmount;
+  const displayAmount = hasDiscount ? report.finalTotal : report.totalAmount;
+  const perPersonAmount = (displayAmount! / participants.length).toFixed(2);
+
   return (
     <div className="p-4 md:p-6 space-y-6">
       <Card className="shadow-lg">
@@ -59,11 +63,21 @@ const ExpenseAnalysisDashboard = ({ data }: { data: Event }) => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+            {hasDiscount && (
+              <div className="p-4 bg-card rounded-lg">
+                <p className="text-sm text-gray-500">Total Amount</p>
+                <p className="text-xl md:text-2xl font-bold">
+                  Rs.{report.totalAmount.toLocaleString()}
+                </p>
+              </div>
+            )}
             <div className="p-4 bg-card rounded-lg">
-              <p className="text-sm text-gray-500">Total Expense</p>
+              <p className="text-sm text-gray-500">
+                {hasDiscount ? "Final Amount" : "Total Expense"}
+              </p>
               <p className="text-xl md:text-2xl font-bold">
-                Rs.{report.totalAmount.toLocaleString()}
+                Rs.{displayAmount!.toLocaleString()}
               </p>
             </div>
             <div className="p-4 bg-card rounded-lg">
@@ -75,7 +89,7 @@ const ExpenseAnalysisDashboard = ({ data }: { data: Event }) => {
             <div className="p-4 bg-card rounded-lg">
               <p className="text-sm text-gray-500">Per Person</p>
               <p className="text-xl md:text-2xl font-bold">
-                Rs.{(report.totalAmount / participants.length).toFixed(2)}
+                Rs.{perPersonAmount}
               </p>
             </div>
             <div className="p-4 bg-card rounded-lg">

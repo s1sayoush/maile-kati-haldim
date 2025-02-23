@@ -221,7 +221,7 @@ const ExpenseDialog: React.FC<ExpenseDialogProps> = ({
         const remainingAmount = calculateRemainingAmount();
 
         return (
-          <div className="space-y-6">
+          <div className="space-y-2">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-semibold">Payment Distribution</h3>
               <div className="text-sm text-muted-foreground">
@@ -230,12 +230,12 @@ const ExpenseDialog: React.FC<ExpenseDialogProps> = ({
             </div>
 
             <ScrollArea>
-              <div className="gap-6  max-h-[33vh] overflow-y-auto">
+              <div className="gap-6  max-h-[25vh] overflow-y-auto">
                 <PaymentCard
                   label="Individual Contributions"
                   icon={<DollarSign className="h-4 w-4" />}
                 >
-                  <div className="space-y-4">
+                  <div className="grid grid-cols-3 gap-4 gap-y-4">
                     {currentEvent?.participants.map((participant) => {
                       const payment = formData.payments.find(
                         (p) => p.personId === participant.id
@@ -271,7 +271,7 @@ const ExpenseDialog: React.FC<ExpenseDialogProps> = ({
               </div>
             </ScrollArea>
 
-            <div className="flex justify-between items-center px-4 py-3 bg-muted rounded-lg">
+            <div className="flex justify-between items-center px-4 py-2 bg-muted rounded-lg">
               <span className="text-sm font-medium">Remaining to allocate</span>
               <span
                 className={`text-sm font-medium ${
@@ -296,7 +296,7 @@ const ExpenseDialog: React.FC<ExpenseDialogProps> = ({
           Provide details about the expense below
         </DialogDescription>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-2">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="itemName">Item Name</Label>
