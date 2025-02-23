@@ -1,3 +1,4 @@
+import React from "react";
 import {
   Table,
   TableBody,
@@ -8,13 +9,21 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Event } from "@/types/types";
+
+interface Transaction {
+  from: string;
+  to: string;
+  amount: number;
+}
+
+interface Balance {
+  id: string;
+  balance: number;
+}
 
 const SettlementPlanTab = ({ data }: { data: Event }) => {
   const { participants, report } = data;
-
-  // Generate settlement plan
   const settlementPlan = generateSettlementPlan(
     report.netBalances!,
     participants
@@ -22,7 +31,6 @@ const SettlementPlanTab = ({ data }: { data: Event }) => {
 
   return (
     <div className="space-y-6">
-      {/* Settlement Plan Table */}
       <Card>
         <CardHeader>
           <CardTitle>Settlement Plan</CardTitle>
@@ -30,33 +38,26 @@ const SettlementPlanTab = ({ data }: { data: Event }) => {
         <CardContent>
           <Table>
             <TableCaption>
-              A plan to settle all debts with minimal transactions.
+              Optimized settlement plan with minimum transactions
             </TableCaption>
             <TableHeader>
               <TableRow>
-                <TableHead>From</TableHead>
-                <TableHead>To</TableHead>
-                <TableHead>Amount</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Action</TableHead>
+                <TableHead className="w-1/3">From</TableHead>
+                <TableHead className="w-1/3">To</TableHead>
+                <TableHead className="w-1/3 text-right">Amount</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {settlementPlan.map((transaction, index) => (
                 <TableRow key={index}>
-                  <TableCell>
+                  <TableCell className="font-medium">
                     {participants.find((p) => p.id === transaction.from)?.name}
                   </TableCell>
                   <TableCell>
                     {participants.find((p) => p.id === transaction.to)?.name}
                   </TableCell>
-                  <TableCell>${transaction.amount}</TableCell>
-                  <TableCell>
-                    {transaction.status === "pending" ? (
-                      <span className="text-yellow-500">Pending</span>
-                    ) : (
-                      <span className="text-green-500">Completed</span>
-                    )}
+                  <TableCell className="text-right">
+                    Rs.{transaction.amount.toFixed(2)}
                   </TableCell>
                 </TableRow>
               ))}
@@ -65,7 +66,6 @@ const SettlementPlanTab = ({ data }: { data: Event }) => {
         </CardContent>
       </Card>
 
-      {/* Net Balances Summary */}
       <Card>
         <CardHeader>
           <CardTitle>Net Balances</CardTitle>
@@ -74,27 +74,28 @@ const SettlementPlanTab = ({ data }: { data: Event }) => {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Participant</TableHead>
-                <TableHead>Net Balance</TableHead>
+                <TableHead className="w-1/2">Participant</TableHead>
+                <TableHead className="w-1/2 text-right">Net Balance</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {participants.map((participant) => (
-                <TableRow key={participant.id}>
-                  <TableCell>{participant.name}</TableCell>
-                  <TableCell>
-                    <span
-                      className={
-                        report.netBalances![participant.id] >= 0
-                          ? "text-green-500"
-                          : "text-red-500"
-                      }
+              {participants.map((participant) => {
+                const balance = report.netBalances![participant.id];
+                return (
+                  <TableRow key={participant.id}>
+                    <TableCell className="font-medium">
+                      {participant.name}
+                    </TableCell>
+                    <TableCell
+                      className={`text-right ${
+                        balance >= 0 ? "text-green-600" : "text-red-600"
+                      }`}
                     >
-                      ${report.netBalances![participant.id]}
-                    </span>
-                  </TableCell>
-                </TableRow>
-              ))}
+                      Rs.{balance.toFixed(2)}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </CardContent>
@@ -103,53 +104,47 @@ const SettlementPlanTab = ({ data }: { data: Event }) => {
   );
 };
 
-export default SettlementPlanTab;
-
-// Helper function to generate an optimized settlement plan
 const generateSettlementPlan = (
   netBalances: Record<string, number>,
-  participants: any[]
-) => {
-  const debts = Object.entries(netBalances)
+  participants: Event["participants"]
+): Transaction[] => {
+  // Convert balances to array and sort by absolute value
+  const balances: Balance[] = Object.entries(netBalances)
     .map(([id, balance]) => ({ id, balance }))
-    .filter(({ balance }) => balance !== 0);
+    .filter(({ balance }) => Math.abs(balance) > 0.01) // Ignore negligible amounts
+    .sort((a, b) => Math.abs(b.balance) - Math.abs(a.balance));
 
-  const creditors = debts.filter(({ balance }) => balance > 0);
-  const debtors = debts.filter(({ balance }) => balance < 0);
+  const settlements: Transaction[] = [];
 
-  const settlementPlan: {
-    from: string;
-    to: string;
-    amount: number;
-    status: string;
-  }[] = [];
+  while (balances.length > 1) {
+    const debtor = balances.find((b) => b.balance < 0);
+    const creditor = balances.find((b) => b.balance > 0);
 
-  debtors.forEach((debtor) => {
-    let remainingDebt = Math.abs(debtor.balance);
+    if (!debtor || !creditor) break;
 
-    while (remainingDebt > 0) {
-      const creditor = creditors.find((c) => c.balance > 0);
-      if (!creditor) break;
+    const amount = Math.min(Math.abs(debtor.balance), creditor.balance);
 
-      const amount = Math.min(remainingDebt, creditor.balance);
-      settlementPlan.push({
+    if (amount > 0.01) {
+      // Only add significant transactions
+      settlements.push({
         from: debtor.id,
         to: creditor.id,
-        amount,
-        status: "pending",
+        amount: Number(amount.toFixed(2)),
       });
-
-      remainingDebt -= amount;
-      creditor.balance -= amount;
     }
-  });
 
-  return settlementPlan;
+    debtor.balance += amount;
+    creditor.balance -= amount;
+
+    // Remove settled participants
+    const settled = balances.filter((b) => Math.abs(b.balance) <= 0.01);
+    settled.forEach((s) => {
+      const index = balances.findIndex((b) => b.id === s.id);
+      if (index !== -1) balances.splice(index, 1);
+    });
+  }
+
+  return settlements;
 };
 
-// // Helper function to mark a transaction as completed
-// const markTransactionAsCompleted = (index: number) => {
-//   // Update the status of the transaction in the settlement plan
-//   // (This would typically involve updating state or making an API call)
-//   console.log(`Transaction ${index} marked as completed.`);
-// };
+export default SettlementPlanTab;

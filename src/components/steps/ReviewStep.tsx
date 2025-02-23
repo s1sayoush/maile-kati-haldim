@@ -120,14 +120,14 @@ const ReviewStep = () => {
                   <TableCell>{item.itemName || "Unnamed Item"}</TableCell>
                   <TableCell>{item.category}</TableCell>
                   <TableCell className="text-right">
-                    ${item.amount.toFixed(2)}
+                    Rs.{item.amount.toFixed(2)}
                   </TableCell>
                 </TableRow>
               ))}
               <TableRow className="font-medium">
                 <TableCell colSpan={2}>Total</TableCell>
                 <TableCell className="text-right">
-                  ${totalAmount.toFixed(2)}
+                  Rs.{totalAmount.toFixed(2)}
                 </TableCell>
                 <TableCell></TableCell>
               </TableRow>
@@ -138,14 +138,14 @@ const ReviewStep = () => {
                       Deductible ({currentEvent.report.deductible.reason})
                     </TableCell>
                     <TableCell className="text-right">
-                      -${currentEvent.report.deductible.amount.toFixed(2)}
+                      -Rs.{currentEvent.report.deductible.amount.toFixed(2)}
                     </TableCell>
                     <TableCell></TableCell>
                   </TableRow>
                   <TableRow className="font-medium">
                     <TableCell colSpan={2}>Final Total</TableCell>
                     <TableCell className="text-right">
-                      ${currentEvent.report.finalTotal?.toFixed(2)}
+                      Rs.{currentEvent.report.finalTotal?.toFixed(2)}
                     </TableCell>
                     <TableCell></TableCell>
                   </TableRow>
@@ -175,24 +175,24 @@ const ReviewStep = () => {
                 <TableRow key={person.id}>
                   <TableCell>{person.name}</TableCell>
                   <TableCell className="text-right">
-                    $
+                    Rs.
                     {currentEvent.report.paidByPerson[person.id]?.toFixed(2) ||
                       "0.00"}
                   </TableCell>
                   <TableCell className="text-right">
-                    $
+                    Rs.
                     {currentEvent.report.finalOwedByPerson?.[
                       person.id
                     ]?.toFixed(2) || "0.00"}
                   </TableCell>
                   <TableCell
-                    className={`text-right ${
+                    className={`text-right Rs.{
                       (currentEvent.report.netBalances?.[person.id] || 0) >= 0
                         ? "text-green-600"
                         : "text-red-600"
                     }`}
                   >
-                    $
+                    Rs.
                     {currentEvent.report.netBalances?.[person.id]?.toFixed(2) ||
                       "0.00"}
                   </TableCell>
