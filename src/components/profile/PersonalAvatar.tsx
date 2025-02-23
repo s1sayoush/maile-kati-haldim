@@ -33,6 +33,7 @@ export const ProfileAvatar = ({
     }
     onImageClick();
   };
+  console.log("profileImage", profileImage);
 
   return (
     <Avatar

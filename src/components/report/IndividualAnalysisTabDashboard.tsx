@@ -137,7 +137,11 @@ const IndividualAnalysisTab = ({ data }: { data: Event }) => {
                     variant={netBalance >= 0 ? "default" : "destructive"}
                     className="ml-2"
                   >
-                    {netBalance >= 0 ? "To Receive" : "To Pay"}
+                    {netBalance > 0
+                      ? "To Receive"
+                      : netBalance < 0
+                      ? "To Pay"
+                      : "Settled"}{" "}
                   </Badge>
                 </div>
                 <CardDescription>

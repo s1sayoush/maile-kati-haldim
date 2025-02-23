@@ -240,13 +240,15 @@ export const useEventStore = create<EventStore>((set, get) => ({
       owedByPerson[person.id] = state.calculateTotalOwed(person.id);
     });
 
-    // Calculate final total (after deductible)
-    const finalTotal =
-      totalAmount - state.currentEvent.report.deductible.amount!;
+    // Handle deductible amount safely
+    const deductibleAmount = state.currentEvent.report.deductible.amount || 0;
 
-    // Calculate deductible per person
-    const deductiblePerPerson =
-      state.currentEvent.report.deductible.amount! / participants.length;
+    // Calculate final total (after deductible)
+    const finalTotal = totalAmount - deductibleAmount;
+
+    // Calculate deductible per person (with division safeguard)
+    const participantCount = participants.length || 1; // Prevent division by zero
+    const deductiblePerPerson = deductibleAmount / participantCount;
 
     // Calculate final owed amounts per person (after deductible)
     const finalOwedByPerson: { [personId: string]: number } = {};
@@ -263,19 +265,19 @@ export const useEventStore = create<EventStore>((set, get) => ({
       (sum, amount) => sum + amount,
       0
     );
+
     participants.forEach((person) => {
-      // Calculate how much of the deductible this person should get back based on their contribution
+      // Calculate deductible share based on payments (handle totalPaid=0)
       const deductibleShare =
         totalPaid > 0
-          ? (paidByPerson[person.id] / totalPaid) *
-            state.currentEvent.report.deductible.amount!
+          ? (paidByPerson[person.id] / totalPaid) * deductibleAmount
           : 0;
 
-      // Net balance is: (what they paid - their share of deductible) - what they owe
+      // Net balance calculation with fallbacks
       netBalances[person.id] =
-        paidByPerson[person.id] -
+        (paidByPerson[person.id] || 0) -
         deductibleShare -
-        finalOwedByPerson[person.id];
+        (finalOwedByPerson[person.id] || 0);
     });
 
     set((state) => ({
@@ -295,18 +297,26 @@ export const useEventStore = create<EventStore>((set, get) => ({
   },
   calculateSettlementPlan: () => {
     const state = get();
-    const netBalances = state.currentEvent.report.netBalances;
+    const netBalances = state.currentEvent.report.netBalances || {};
+
+    Object.entries(netBalances).forEach(([personId, balance = 0]) => {
+      // Now balance will be 0 if undefined
+      if (balance > 0.01) {
+        creditors.push({ id: personId, amount: balance });
+      } else if (balance < -0.01) {
+        debtors.push({ id: personId, amount: -balance });
+      }
+    });
 
     // Separate participants into creditors and debtors.
     const creditors: { id: string; amount: number }[] = [];
     const debtors: { id: string; amount: number }[] = [];
 
-    Object.entries(netBalances!).forEach(([personId, balance]) => {
-      // Allow a small threshold to avoid rounding issues.
+    Object.entries(netBalances).forEach(([personId, balance = 0]) => {
+      // Now balance will be 0 if undefined
       if (balance > 0.01) {
         creditors.push({ id: personId, amount: balance });
       } else if (balance < -0.01) {
-        // Store the debt as a positive number.
         debtors.push({ id: personId, amount: -balance });
       }
     });

@@ -19,11 +19,13 @@ import OverviewTab from "./OverviewTab";
 import ExpensesBreakdownTab from "./ExpensesBreakdownTab";
 import IndividualAnalysisTab from "./IndividualAnalysisTabDashboard";
 import SettlementPlanTab from "./SettlementPlanTab";
+import { Button } from "../ui/button";
+import { useRouter } from "next/navigation";
 
 const ExpenseAnalysisDashboard = ({ data }: { data: Event }) => {
   const [activeTab, setActiveTab] = React.useState("overview");
   const { participants, details, report } = data;
-
+  const router = useRouter();
   const tabs = [
     { value: "overview", label: "Overview" },
     { value: "expenses", label: "Expenses Breakdown" },
@@ -98,6 +100,14 @@ const ExpenseAnalysisDashboard = ({ data }: { data: Event }) => {
                 {data.items.length}
               </p>
             </div>
+            <Button
+              // onClick={() => router.push(`${window.location.pathname}/pdf`)}
+              onClick={() =>
+                alert("still need time to implement pdf and downloading")
+              }
+            >
+              Download Report
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -105,7 +115,7 @@ const ExpenseAnalysisDashboard = ({ data }: { data: Event }) => {
       {/* Mobile Select */}
       <div className="block md:hidden">
         <Select value={activeTab} onValueChange={setActiveTab}>
-          <SelectTrigger className="w-full">
+          <SelectTrigger className="w-full bg-secondary h-10 border-primary">
             <SelectValue placeholder="Select view" />
           </SelectTrigger>
           <SelectContent>
@@ -121,7 +131,7 @@ const ExpenseAnalysisDashboard = ({ data }: { data: Event }) => {
       {/* Desktop Tabs */}
       <div className="hidden md:block">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-4 borderborder-primary">
             {tabs.map((tab) => (
               <TabsTrigger key={tab.value} value={tab.value}>
                 {tab.label}

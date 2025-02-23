@@ -9,6 +9,7 @@ import EventDetailsStep from "./EventDetailsStep";
 import ParticipantsStep from "./ParticipantsStep";
 import ExpensesStep from "./ExpensesStep";
 import ReviewStep from "./ReviewStep";
+import { useQueryClient } from "@tanstack/react-query";
 
 export const STEPS: Step[] = [
   {
@@ -40,6 +41,7 @@ export const StepperContent = () => {
   const router = useRouter();
   const { userDetails } = useUser();
   const currentState = useEventStore.getState();
+  const queryClient = useQueryClient();
 
   const event = {
     ...currentState.currentEvent,
@@ -51,6 +53,10 @@ export const StepperContent = () => {
       try {
         await pushEvent(userDetails?.uid || "", event);
         useEventStore.getState().resetStore();
+        queryClient.invalidateQueries({
+          queryKey: ["userEvents", userDetails?.uid],
+        });
+
         router.refresh();
         router.push(`./reports/${event.id}`);
       } catch (error) {

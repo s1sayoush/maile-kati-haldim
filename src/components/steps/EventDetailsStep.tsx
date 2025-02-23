@@ -16,7 +16,6 @@ import { format } from "date-fns";
 import { Calendar as CalendarIcon } from "lucide-react";
 import { Calendar } from "../ui/calendar";
 
-// Dynamically import the Map component with no SSR
 const Map = dynamic(() => import("./Map"), {
   ssr: false,
   loading: () => (
@@ -31,35 +30,24 @@ const EventDetailsStep = () => {
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
-  // Initialize map center from store coordinates
-  const initialCenter: [number, number] = [
-    currentEvent.details.coordinates![0],
-    currentEvent.details.coordinates![1]!,
-  ];
+  const initialCenter: [number, number] =
+    currentEvent.details.coordinates?.length === 2
+      ? [
+          currentEvent.details.coordinates[0],
+          currentEvent.details.coordinates[1],
+        ]
+      : [51.505, -0.09];
 
-  // Initialize state with proper null checks
-  const [center, setCenter] = useState<[number, number]>(() => {
-    if (currentEvent.details.coordinates?.length === 2) {
-      return [
-        currentEvent.details.coordinates[0], // latitude
-        currentEvent.details.coordinates[1], // longitude
-      ];
-    }
-    return [51.505, -0.09]; // Default fallback
-  });
-
+  const [center, setCenter] = useState<[number, number]>(initialCenter);
   const [markerPosition, setMarkerPosition] = useState<[number, number] | null>(
     currentEvent.details.coordinates?.length === 2
       ? [
-          currentEvent.details.coordinates[0], // latitude
-          currentEvent.details.coordinates[1], // longitude
+          currentEvent.details.coordinates[0],
+          currentEvent.details.coordinates[1],
         ]
       : null
   );
 
-  console.log("init", initialCenter);
-
-  // Sync with store updates
   useEffect(() => {
     if (currentEvent.details.coordinates?.length === 2) {
       const [lat, lng] = currentEvent.details.coordinates;
@@ -70,6 +58,8 @@ const EventDetailsStep = () => {
 
   const handleSearch = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!searchQuery.trim()) return;
+
     setIsLoading(true);
     try {
       const response = await fetch(
@@ -79,17 +69,28 @@ const EventDetailsStep = () => {
       );
       const data = await response.json();
 
-      if (data[0]) {
+      if (data && data.length > 0) {
         const { lat, lon } = data[0];
         const latNum = parseFloat(lat);
         const lonNum = parseFloat(lon);
         setCenter([latNum, lonNum]);
         setMarkerPosition([latNum, lonNum]);
         updateCoordinates(latNum, lonNum);
-        fetchAddress(latNum, lonNum);
+        await fetchAddress(latNum, lonNum);
+      } else {
+        // If no results found, use the search query as location name
+        setEventDetails({
+          ...currentEvent?.details,
+          location: searchQuery,
+        });
       }
     } catch (error) {
       console.error("Error searching location:", error);
+      // On error, still use the search query as location name
+      setEventDetails({
+        ...currentEvent?.details,
+        location: searchQuery,
+      });
     } finally {
       setIsLoading(false);
     }
@@ -109,6 +110,7 @@ const EventDetailsStep = () => {
       );
       const data = await response.json();
 
+      // Default to search query if no location data is found
       let locationName = searchQuery;
 
       if (data && data.address) {
@@ -124,18 +126,18 @@ const EventDetailsStep = () => {
           village,
         } = data.address;
 
-        // Prioritize more specific location details over broader ones
+        // Try to get the most specific location name available
         locationName =
-          name || // Specific place name (e.g., college, landmark)
-          amenity || // Points of interest like restaurants, hospitals, schools
-          building || // Specific buildings
-          road || // Street address
-          neighbourhood || // Local area
-          suburb || // District/suburb
+          name ||
+          amenity ||
+          building ||
+          road ||
+          neighbourhood ||
+          suburb ||
           city ||
           town ||
-          village || // Larger administrative areas
-          searchQuery; // Fallback to search query
+          village ||
+          searchQuery; // Fallback to search query if no other name is found
       }
 
       setEventDetails({
@@ -145,6 +147,7 @@ const EventDetailsStep = () => {
       });
     } catch (error) {
       console.error("Error fetching address:", error);
+      // On error, use the search query as the location name
       setEventDetails({
         ...(currentEvent?.details ?? {}),
         location: searchQuery,
@@ -153,10 +156,16 @@ const EventDetailsStep = () => {
     }
   };
 
+  const handleMapClick = (lat: number, lng: number) => {
+    setMarkerPosition([lat, lng]);
+    setCenter([lat, lng]);
+    updateCoordinates(lat, lng);
+    fetchAddress(lat, lng);
+  };
+
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-        {/* Event Title Field */}
         <div className="flex flex-col space-y-2 w-full">
           <Label htmlFor="eventTitle" className="text-base font-medium">
             Event Title
@@ -175,7 +184,6 @@ const EventDetailsStep = () => {
           />
         </div>
 
-        {/* Date Picker */}
         <div className="flex flex-col space-y-2 w-full">
           <Label htmlFor="date" className="text-base font-medium">
             Date
@@ -245,12 +253,7 @@ const EventDetailsStep = () => {
         <Map
           center={center}
           markerPosition={markerPosition}
-          onMapClick={(lat: number, lng: number) => {
-            setMarkerPosition([lat, lng]);
-            setCenter([lat, lng]);
-            updateCoordinates(lat, lng);
-            fetchAddress(lat, lng);
-          }}
+          onMapClick={handleMapClick}
         />
       </div>
 
